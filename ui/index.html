@@ -9,25 +9,25 @@
 </head>
 <body>
 
-  <!-- Header -->
+  <!-- Top Global Header -->
   <header>
     <div class="brand-section">
-      <div class="logo-badge">NIYAM</div>
+      <div class="logo-badge">⚡ NIYAM नियम</div>
       <div class="brand-title">
         <h1>NIYAM Enforcement Gateway <span class="track-tag">Track 01: Agentic Commerce</span></h1>
-        <p class="brand-subtitle">Unified Agent Protocol (UAP) Policy Engine for Autonomous AI Buyers</p>
+        <p class="brand-subtitle">Unified Agent Protocol (UAP) Deterministic Policy Engine for Autonomous AI Buyers</p>
       </div>
     </div>
 
     <div class="header-controls">
-      <!-- Chaos Switch for Failure Mode 2 -->
-      <div class="chaos-control">
+      <!-- Chaos Outage Switch -->
+      <div class="chaos-pill">
         <span class="chaos-label">Razorpay Outage Chaos:</span>
         <label class="chaos-switch">
           <input type="checkbox" id="chaosToggle" onchange="toggleChaos(this.checked)">
           <span class="slider"></span>
         </label>
-        <span id="chaosStatusBadge" class="chaos-status status-normal">CIRCUIT CLOSED</span>
+        <span id="chaosStatusBadge" class="chaos-indicator ind-closed">CIRCUIT CLOSED</span>
       </div>
 
       <button class="btn btn-secondary" onclick="refreshAll()" title="Refresh Gateway State">
@@ -36,250 +36,614 @@
     </div>
   </header>
 
-  <!-- Interactive Testing Playbook Bar -->
-  <div class="guide-banner">
-    <div class="guide-title">
-      <span>🎯</span> Interactive Testing Playbook:
-    </div>
-    <div class="guide-steps">
-      <button class="guide-pill active" onclick="runPlaybookStep(1)" id="pillStep1">
-        1️⃣ Compile Policy (Hinglish)
+  <!-- Navigation Tab Bar — Spacious, Uncongested Architecture -->
+  <nav class="tab-navigation">
+    <div class="nav-tabs-group">
+      <button class="nav-tab-btn active" onclick="switchView('commerce')" id="tabCommerce">
+        🤖 Agent Terminal
       </button>
-      <button class="guide-pill" onclick="runPlaybookStep(2)" id="pillStep2">
-        2️⃣ Compliant Purchase (₹450)
+      <button class="nav-tab-btn" onclick="switchView('scenarios')" id="tabScenarios">
+        ⚡ Scenario Lab
       </button>
-      <button class="guide-pill" onclick="runPlaybookStep(3)" id="pillStep3">
-        3️⃣ Growth Upsell (+₹250 AOV)
+      <button class="nav-tab-btn" onclick="switchView('policy')" id="tabPolicy">
+        📜 Policy Studio
       </button>
-      <button class="guide-pill" onclick="runPlaybookStep(4)" id="pillStep4">
-        4️⃣ Failure Mode 1 (Overspend & Waiver)
+      <button class="nav-tab-btn" onclick="switchView('audit')" id="tabAudit">
+        📋 Audit Forensics
       </button>
-      <button class="guide-pill" onclick="runPlaybookStep(5)" id="pillStep5">
-        5️⃣ Idempotency (Retry Safe)
+      <button class="nav-tab-btn" onclick="switchView('chaos')" id="tabChaos">
+        🛡️ Circuit Breaker Lab
       </button>
-      <button class="guide-pill" onclick="runPlaybookStep(6)" id="pillStep6">
-        6️⃣ Failure Mode 2 (Chaos Outage)
+      <button class="nav-tab-btn" onclick="switchView('playbook')" id="tabPlaybook">
+        🎯 Judge Playbook
       </button>
     </div>
-  </div>
 
-  <!-- Instruction Walkthrough Alert Box -->
-  <div id="playbookTipBox" style="background: #101622; border-bottom: 1px solid var(--border-color); padding: 0.65rem 2rem; font-size: 0.8rem; color: #94A3B8; display: flex; align-items: center; justify-content: space-between;">
-    <div>
-      <strong id="playbookTipTitle" style="color: var(--primary-mint);">Step 1: Policy Compilation:</strong> 
-      <span id="playbookTipBody">Edit the Hinglish policy text in Column 1 and click 'Compile & Activate' to see the deterministic JSON Schema generated with zero LLMs on the financial path.</span>
-    </div>
-    <span style="font-size: 0.72rem; color: #64748B; font-family: monospace;">Track 01 Judge Playbook</span>
-  </div>
-
-  <!-- Metrics Bar -->
-  <div class="metrics-strip">
-    <div class="metric-item">
-      <span class="metric-value" id="mTotalEvals">0</span>
-      <span class="metric-label">Evaluations</span>
-    </div>
-    <div class="metric-item">
-      <span class="metric-value" id="mApproved" style="color: var(--success);">0</span>
-      <span class="metric-label">Approved</span>
-    </div>
-    <div class="metric-item">
-      <span class="metric-value" id="mDenied" style="color: var(--danger);">0</span>
-      <span class="metric-label">Denied</span>
-    </div>
-    <div class="metric-item">
-      <span class="metric-value" id="mDuplicates" style="color: var(--info);">0</span>
-      <span class="metric-label">Duplicates Suppressed</span>
-    </div>
-    <div class="metric-item">
-      <span class="metric-value" id="mCircuitBreaker" style="color: var(--warning);">0</span>
-      <span class="metric-label">Circuit Breaker Intercepts</span>
-    </div>
-    <div class="metric-item">
-      <span class="metric-value" id="mCompliance">100%</span>
-      <span class="metric-label">Audit Completeness</span>
-    </div>
-  </div>
-
-  <!-- Main 3-Column Layout -->
-  <main class="main-container">
-
-    <!-- Column 1: Policy Studio & UAP Mandates -->
-    <section class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <span>📜</span> Policy Studio (Hinglish / English)
-        </div>
-        <span id="activePolicyVersionBadge" class="badge badge-policy">v1</span>
+    <!-- Quick Live Metrics -->
+    <div class="metrics-group">
+      <div class="mini-metric">
+        <span class="mini-metric-val" id="mTotalEvals">0</span>
+        <span class="mini-metric-lbl">Evals</span>
       </div>
-
-      <div class="panel-body">
-        <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.4rem;">
-            Natural Language Spending Mandate:
-          </label>
-          <textarea id="policyInput" rows="4" placeholder="Enter policy in Hinglish or English...">Baccho ke toys ke liye max 1200 per order, electronics bilkul nahi, monthly 8000 se upar mat hone dena. Sirf returnable items lena.</textarea>
-        </div>
-
-        <button class="btn" style="width: 100%;" onclick="compilePolicy()">
-          ⚡ Compile & Activate (vN+1)
-        </button>
-
-        <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.4rem;">
-            Active JSON Schema Mandate (Immutable):
-          </label>
-          <pre class="json-viewer" id="policyJsonViewer">Loading policy...</pre>
-        </div>
-
-        <div style="background: #0D1322; border: 1px solid #1E293B; border-radius: 8px; padding: 0.8rem; font-size: 0.75rem; color: #94A3B8;">
-          <strong style="color: #38BDF8;">💡 How this works:</strong>
-          The LLM compiles natural language into a strictly validated JSON Schema once at onboarding. At transaction time, evaluation is <strong>100% deterministic code</strong> with zero LLM in the financial path.
-        </div>
+      <div class="mini-metric">
+        <span class="mini-metric-val" id="mApproved" style="color: var(--mint);">0</span>
+        <span class="mini-metric-lbl">Approved</span>
       </div>
-    </section>
-
-    <!-- Column 2: Autonomous Agent Commerce Simulator -->
-    <section class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <span>🤖</span> Autonomous Agent Shopper
-        </div>
-        <span class="badge badge-approved" id="agentAuthBadge">agent_shopper_01 (Verified)</span>
+      <div class="mini-metric">
+        <span class="mini-metric-val" id="mDenied" style="color: var(--rose);">0</span>
+        <span class="mini-metric-lbl">Denied</span>
       </div>
+      <div class="mini-metric">
+        <span class="mini-metric-val" id="mDuplicates" style="color: var(--violet);">0</span>
+        <span class="mini-metric-lbl">Dedupes</span>
+      </div>
+      <div class="mini-metric">
+        <span class="mini-metric-val" id="mCircuitBreaker" style="color: var(--orange);">0</span>
+        <span class="mini-metric-lbl">Outages</span>
+      </div>
+    </div>
+  </nav>
 
-      <div class="panel-body">
+  <!-- Main Viewport Area -->
+  <main class="tab-content-area">
+
+    <!-- ==================== VIEW 1: AGENT COMMERCE TERMINAL ==================== -->
+    <div id="viewCommerce" class="tab-view active-view">
+      <div class="page-intro-header">
         <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">
-            Select Test Scenario (Click to Load):
-          </label>
-          <div class="scenarios-grid">
-            
-            <div class="scenario-card" onclick="loadScenario('happy_path')">
-              <div class="scenario-info">
-                <h4>🟢 Compliant Purchase</h4>
-                <p>Wooden Teddy Bear (₹450) • Complies with ₹1,200 limit</p>
-              </div>
-              <span class="badge badge-approved">Pass</span>
-            </div>
-
-            <div class="scenario-card" onclick="loadScenario('overspend')">
-              <div class="scenario-info">
-                <h4>🔴 Failure Mode 1: Overspend Breach</h4>
-                <p>Flagship 5G Smartphone (₹79,999) • Breaches ₹1,200 limit</p>
-              </div>
-              <span class="badge badge-denied">Overspend</span>
-            </div>
-
-            <div class="scenario-card" onclick="loadScenario('forbidden_cat')">
-              <div class="scenario-info">
-                <h4>🔴 Failure Mode 1: Forbidden Category</h4>
-                <p>Wireless Earbuds (₹899) • Blocked by "electronics: 0"</p>
-              </div>
-              <span class="badge badge-denied">Forbidden</span>
-            </div>
-
-            <div class="scenario-card" onclick="loadScenario('non_returnable')">
-              <div class="scenario-info">
-                <h4>🔴 Failure Mode 1: Non-Returnable Item</h4>
-                <p>Custom Engraved Doll (₹600) • Blocked by "returnable_only"</p>
-              </div>
-              <span class="badge badge-denied">Policy</span>
-            </div>
-
-            <div class="scenario-card" onclick="loadScenario('idempotency')">
-              <div class="scenario-info">
-                <h4>🔁 Idempotency Test (Network Retry)</h4>
-                <p>Re-sends same idempotency key • Prevents double-charge</p>
-              </div>
-              <span class="badge badge-duplicate">Dedupe</span>
-            </div>
-
-            <div class="scenario-card" onclick="loadScenario('chaos')">
-              <div class="scenario-info">
-                <h4>⚠️ Failure Mode 2: Razorpay Outage</h4>
-                <p>Trips circuit breaker • Fails closed with 503</p>
-              </div>
-              <span class="badge badge-outage">Circuit</span>
-            </div>
-
-            <div class="scenario-card" onclick="loadScenario('marginal_overspend')">
-              <div class="scenario-info">
-                <h4>💡 "Save the Sale" 1-Tap Waiver</h4>
-                <p>Robotics Kit (₹1,350 vs ₹1,200 cap) • Recovers conversion via 1-tap waiver</p>
-              </div>
-              <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: #38BDF8; border: 1px solid #38BDF8;">Growth</span>
-            </div>
-
-          </div>
+          <h2>🤖 Autonomous Agent Shopping Terminal</h2>
+          <p>Inspect active shopping cart, review remaining authorized headroom, and execute live deterministic gateway evaluation.</p>
         </div>
-
-        <!-- Headroom & Merchant Growth Upsell Panel -->
-        <div id="growthUpsellPanel" style="background: #0E1726; border: 1px solid #1E293B; border-radius: 8px; padding: 0.8rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <span style="font-size: 0.78rem; font-weight: 700; color: #38BDF8;">📈 Authorized Headroom (Merchant Growth):</span>
-            <span id="headroomAmountText" style="font-size: 0.85rem; font-weight: 800; color: #10B981;">₹750.00 Available</span>
-          </div>
-          <p style="font-size: 0.75rem; color: #94A3B8; margin-bottom: 0.5rem;">
-            Add high-margin complementary items without exceeding policy cap:
-          </p>
-          <div id="upsellButtonsContainer" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
-        </div>
-
-        <!-- Current Shopping Cart / Request Payload -->
-        <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.4rem;">
-            Purchase Request Payload (POST /purchase):
-          </label>
-          <pre class="json-viewer" id="cartPayloadViewer" style="max-height: 140px;"></pre>
-        </div>
-
-        <div style="display: flex; gap: 0.8rem;">
-          <button class="btn" style="flex: 1;" onclick="executePurchase()" id="btnExecute">
-            🚀 Submit Purchase to Gateway
-          </button>
-          <button class="btn btn-secondary" onclick="retryLastPurchase()" title="Re-submit with identical idempotency key">
-            🔁 Retry Same Key
+        <div style="display: flex; gap: 0.6rem;">
+          <button class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.8rem;" onclick="switchView('scenarios')">
+            ⚡ Load Pre-built Scenarios ↗
           </button>
         </div>
-
-        <!-- Execution Result Banner -->
-        <div id="executionResultBox" style="display: none;"></div>
-      </div>
-    </section>
-
-    <!-- Column 3: Live Audit Stream & Failure Escalation -->
-    <section class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <span>📋</span> Live Immutable Audit Ledger
-        </div>
-        <span class="badge badge-policy">action_logs</span>
       </div>
 
-      <div class="panel-body">
+      <div class="grid-commerce">
         
-        <!-- Live Escalation Notification Banner (Shown on Denial) -->
-        <div id="escalationNotification" class="escalation-banner" style="display: none;">
-          <div class="escalation-icon">🚨</div>
-          <div class="escalation-content">
-            <h5>Simulated Escalation Dispatched</h5>
-            <p id="escalationText">Automated Voice Callback / SMS alert dispatched to account principal.</p>
+        <!-- Left Column: Active Cart & Headroom -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>🛒</span> Active Shopping Cart
+            </div>
+            <span class="badge badge-mint">agent_shopper_01 (Verified)</span>
+          </div>
+
+          <div class="card-body">
+            <!-- Cart Items Stream -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                <label style="font-size: 0.8rem; font-weight: 800; color: var(--text-secondary);">
+                  Items in Agent Cart:
+                </label>
+                <button class="btn-template-pill" onclick="addCustomToyPrompt()" title="Add item">
+                  ➕ Add Item
+                </button>
+              </div>
+              
+              <div class="cart-items-list" id="cartItemsListContainer">
+                <!-- Injected via JavaScript -->
+              </div>
+            </div>
+
+            <!-- Authorized Headroom & Merchant Growth Panel -->
+            <div class="headroom-panel">
+              <div class="headroom-header">
+                <span class="headroom-title">
+                  <span>📈</span> Merchant Growth & Authorized Headroom:
+                </span>
+                <span id="headroomAmountText" class="headroom-val">₹750.00 Available</span>
+              </div>
+              <div class="headroom-progress-track">
+                <div class="headroom-progress-bar" id="headroomProgressBar" style="width: 62%;"></div>
+              </div>
+              <p style="font-size: 0.74rem; color: var(--text-secondary);">
+                Policy-Aware Upselling: Add complementary add-ons to boost Average Order Value (AOV) without exceeding policy limits:
+              </p>
+              <div class="upsell-chips" id="upsellButtonsContainer">
+                <!-- Dynamically injected -->
+              </div>
+            </div>
+
+            <!-- Outgoing Payload JSON Preview -->
+            <div>
+              <label style="font-size: 0.76rem; font-weight: 800; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
+                UAP Financial Payload (POST /purchase):
+              </label>
+              <pre class="code-box" id="cartPayloadViewer" style="max-height: 140px;"></pre>
+            </div>
           </div>
         </div>
 
-        <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">
-            Real-Time Decision Stream:
-          </label>
-          <div class="audit-list" id="auditListContainer">
-            <div style="color: var(--text-muted); font-size: 0.8rem;">Listening for transaction events...</div>
+        <!-- Right Column: Gateway Evaluation Console -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>⚡</span> Deterministic Enforcement Gate
+            </div>
+            <span class="badge badge-volt" id="activePolicyTag">Policy v1 Active</span>
+          </div>
+
+          <div class="card-body">
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 0.8rem;">
+              <button class="btn" style="flex: 1;" onclick="executePurchase()" id="btnExecute">
+                🚀 Submit Purchase to Gateway
+              </button>
+              <button class="btn btn-secondary" onclick="retryLastPurchase()" id="btnRetry" title="Re-submit identical idempotency key">
+                🔁 Retry Same Key
+              </button>
+            </div>
+
+            <!-- Live Execution Result Output Box -->
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 800; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">
+                Live Gateway Decision:
+              </label>
+              <div id="executionResultBox" style="display: none;"></div>
+              <div id="executionIdleBox" style="background: #0B0B10; border: 1px dashed var(--border-subtle); border-radius: 10px; padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
+                Click <strong>"Submit Purchase to Gateway"</strong> to trigger deterministic evaluation and view the financial decision.
+              </div>
+            </div>
+
+            <!-- Sub-millisecond Execution Benchmark Note -->
+            <div style="background: #09090E; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1.1rem; font-size: 0.76rem; color: var(--text-secondary); line-height: 1.5;\">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+                <strong style="color: var(--volt); font-size: 0.82rem;">🛡️ Sub-Millisecond Financial Gate</strong>
+                <span class="badge badge-mint">0 LLMs in Payment Path</span>
+              </div>
+              Pure mathematical evaluation prevents hallucinated purchases. On approval, an authentic Razorpay MCP test link is issued. On breach, funds are strictly gated and logged to the tamper-evident audit ledger.
+            </div>
+
           </div>
         </div>
 
       </div>
-    </section>
+    </div>
+
+    <!-- ==================== VIEW 2: AUTONOMOUS SCENARIO LAB ==================== -->
+    <div id="viewScenarios" class="tab-view">
+      <div class="page-intro-header">
+        <div>
+          <h2>⚡ Autonomous Buyer Scenarios</h2>
+          <p>Pre-configured real-world commerce transactions testing compliance, growth waivers, and failure resilience.</p>
+        </div>
+        <span class="badge badge-violet">6 Standard Scenarios</span>
+      </div>
+
+      <div class="grid-three-column">
+        
+        <!-- Scenario 1: Compliant Purchase -->
+        <div class="sc-showcase-card">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">🟢 Compliant Toy</span>
+              <span class="badge badge-mint">₹450.00</span>
+            </div>
+            <p class="sc-showcase-desc">Handcrafted Wooden Teddy Bear within ₹1,200 limit. Evaluator approves and creates Razorpay payment link.</p>
+            <div class="sc-showcase-rule">Rule: per_tx_max (₹1,200) • Category: toys</div>
+          </div>
+          <button class="btn" onclick="loadAndExecuteScenario('happy_path')">
+            ⚡ Load & Execute in Terminal
+          </button>
+        </div>
+
+        <!-- Scenario 2: Save the Sale Waiver -->
+        <div class="sc-showcase-card" style="border-color: rgba(176, 38, 255, 0.4);">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">💡 Save the Sale</span>
+              <span class="badge badge-volt">₹1,350.00</span>
+            </div>
+            <p class="sc-showcase-desc">Robotics Building Set exceeds limit by ₹150. Triggers interactive WhatsApp 1-Tap Principal Waiver modal to recover revenue!</p>
+            <div class="sc-showcase-rule">Opportunity: 1-Tap Exception Waiver</div>
+          </div>
+          <button class="btn btn-violet" onclick="loadAndExecuteScenario('marginal_overspend')">
+            📲 Load & Trigger Waiver Modal
+          </button>
+        </div>
+
+        <!-- Scenario 3: Massive Overspend Breach -->
+        <div class="sc-showcase-card">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">🔴 Massive Overspend</span>
+              <span class="badge badge-rose">₹79,999.00</span>
+            </div>
+            <p class="sc-showcase-desc">Flagship 5G Phone violently breaches the ₹1,200 cap. Gate immediately halts execution and flags human principal.</p>
+            <div class="sc-showcase-rule">Rule: per_tx_max exceeded by ₹78,799</div>
+          </div>
+          <button class="btn btn-secondary" onclick="loadAndExecuteScenario('overspend')">
+            🚫 Test Overspend Block
+          </button>
+        </div>
+
+        <!-- Scenario 4: Forbidden Category -->
+        <div class="sc-showcase-card">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">🚫 Forbidden Category</span>
+              <span class="badge badge-rose">₹899.00</span>
+            </div>
+            <p class="sc-showcase-desc">True Wireless Earbuds under 'electronics'. Policy explicitly sets electronics budget to ₹0. Blocked instantly.</p>
+            <div class="sc-showcase-rule">Rule: category_spend_limits['electronics'] = 0</div>
+          </div>
+          <button class="btn btn-secondary" onclick="loadAndExecuteScenario('forbidden_cat')">
+            🚫 Test Category Filter
+          </button>
+        </div>
+
+        <!-- Scenario 5: Non-Returnable Item -->
+        <div class="sc-showcase-card">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">🔄 Non-Returnable</span>
+              <span class="badge badge-rose">₹600.00</span>
+            </div>
+            <p class="sc-showcase-desc">Custom Engraved Name Doll marked returnable=false. Policy mandates only returnable items may be bought.</p>
+            <div class="sc-showcase-rule">Rule: returnable_only == true</div>
+          </div>
+          <button class="btn btn-secondary" onclick="loadAndExecuteScenario('non_returnable')">
+            🚫 Test Returnable Constraint
+          </button>
+        </div>
+
+        <!-- Scenario 6: Idempotency Protection -->
+        <div class="sc-showcase-card">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">🔁 Idempotency Gate</span>
+              <span class="badge badge-violet">Dedupe</span>
+            </div>
+            <p class="sc-showcase-desc">Resubmitting identical idempotency token returns cached result (DUPLICATE_SUPPRESSED) with zero double-debit.</p>
+            <div class="sc-showcase-rule">Token: idemp_fixed_retry_demo_key</div>
+          </div>
+          <button class="btn btn-secondary" onclick="loadAndExecuteScenario('idempotency')">
+            🔁 Test Idempotency Retry
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== VIEW 3: POLICY STUDIO ==================== -->
+    <div id="viewPolicy" class="tab-view">
+      <div class="page-intro-header">
+        <div>
+          <h2>📜 Natural Language Policy Studio</h2>
+          <p>Author spending boundaries in natural Hindi, Hinglish, or English. Compiles strictly at onboarding into an immutable JSON Schema.</p>
+        </div>
+        <span class="badge badge-violet">Compile-Time Boundary</span>
+      </div>
+
+      <div class="grid-two-column">
+        
+        <!-- Left: Prompt Editor & Templates -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>✍️</span> Policy Compiler Input
+            </div>
+            <span class="badge badge-volt">Hinglish / English</span>
+          </div>
+
+          <div class="card-body">
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); display: block; margin-bottom: 0.4rem;">
+                Quick Template Presets:
+              </label>
+              <div class="template-buttons-row">
+                <button class="btn-template-pill" onclick="setPolicyTemplate('toys')">🧸 Kids Toys (₹1.2k)</button>
+                <button class="btn-template-pill" onclick="setPolicyTemplate('strict')">🚫 Zero Electronics</button>
+                <button class="btn-template-pill" onclick="setPolicyTemplate('festival')">🎉 Festival Cap (₹5k)</button>
+                <button class="btn-template-pill" onclick="setPolicyTemplate('conservative')">🛡️ Strict ₹500 Cap</button>
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); display: block; margin-bottom: 0.4rem;">
+                Draft Natural Language Policy:
+              </label>
+              <textarea id="policyInput" rows="5" placeholder="Enter policy in Hinglish or English...">Baccho ke toys ke liye max 1200 per order, electronics bilkul nahi, monthly 8000 se upar mat hone dena. Sirf returnable items lena.</textarea>
+            </div>
+
+            <button class="btn btn-violet" style="width: 100%;" onclick="compilePolicy()" id="btnCompilePolicy">
+              ⚡ Compile & Activate New Policy Version (vN+1)
+            </button>
+
+            <div style="background: #09090E; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1rem; font-size: 0.77rem; color: var(--text-secondary); line-height: 1.45;">
+              <strong style="color: var(--violet);">💡 Architectural Rigor:</strong>
+              The LLM parses intent and outputs a validated JSON schema strictly during configuration. When purchases execute, the LLM is completely bypassed for deterministic sub-millisecond evaluation.
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Active Schema JSON Viewer -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>📐</span> Active Immutable Policy Schema
+            </div>
+            <span id="activePolicyVersionBadge" class="badge badge-volt">v1</span>
+          </div>
+
+          <div class="card-body">
+            <label style="font-size: 0.8rem; font-weight: 800; color: var(--text-secondary);">
+              Validated JSON Contract (Pydantic Schema):
+            </label>
+            <pre class="code-box" id="policyJsonViewer" style="max-height: 380px;">Loading active policy...</pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== VIEW 4: LIVE AUDIT LEDGER & FORENSICS ==================== -->
+    <div id="viewAudit" class="tab-view">
+      <div class="page-intro-header">
+        <div>
+          <h2>📋 Tamper-Evident Audit Ledger & Compliance Forensics</h2>
+          <p>Append-only Write-Ahead Log (WAL) recording every agent action, gate decision, and financial event with Dead-Letter Queue (DLQ) buffering.</p>
+        </div>
+        <div style="display: flex; gap: 0.8rem;">
+          <button class="btn btn-mint" style="font-size: 0.8rem; padding: 0.45rem 1rem;" onclick="exportAuditCsv()" id="btnExportCsv">
+            📥 Export Compliance CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="single-column-layout">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>🛡️</span> Financial Audit Trail Stream
+            </div>
+            <div class="audit-filter-bar">
+              <div class="filter-pills">
+                <button class="filter-pill active" onclick="filterAuditLogs('ALL')">All</button>
+                <button class="filter-pill" onclick="filterAuditLogs('APPROVED')">Approved</button>
+                <button class="filter-pill" onclick="filterAuditLogs('DENIED')">Denied</button>
+                <button class="filter-pill" onclick="filterAuditLogs('DUPLICATE_SUPPRESSED')">Duplicates</button>
+                <button class="filter-pill" onclick="filterAuditLogs('RAZORPAY_UNAVAILABLE')">Outages</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="audit-table-stream" id="auditListContainer">
+              <div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem;">Listening for transaction events...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== VIEW 5: CIRCUIT BREAKER & CHAOS LAB ==================== -->
+    <div id="viewChaos" class="tab-view">
+      <div class="page-intro-header">
+        <div>
+          <h2>🛡️ Circuit Breaker & Chaos Engineering Lab</h2>
+          <p>Track 01 Core Bar: <em>"Show the audit trail and one failure handled gracefully."</em> NIYAM demonstrates two distinct failure modes. This lab tests Failure Mode 2: Upstream payment rail outages.</p>
+        </div>
+        <span class="badge badge-orange">Failure Mode 2</span>
+      </div>
+
+      <div class="single-column-layout">
+        
+        <!-- Animated Circuit Breaker State Machine Diagram -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>⚡</span> Circuit Breaker Finite State Machine
+            </div>
+            <span class="badge badge-mint" id="circuitMachineBadge">HEALTHY (CLOSED)</span>
+          </div>
+
+          <div class="card-body">
+            <div class="circuit-state-flow">
+              <div class="circuit-node active-node" id="nodeClosed">
+                <div style="font-size: 1.2rem; margin-bottom: 0.3rem;">🟢</div>
+                <strong style="color: var(--mint); font-size: 0.88rem;">CLOSED</strong>
+                <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">Normal Execution<br>Razorpay MCP Dispatched</p>
+              </div>
+              <div class="circuit-arrow">➔</div>
+              <div class="circuit-node" id="nodeOpen">
+                <div style="font-size: 1.2rem; margin-bottom: 0.3rem;">🔴</div>
+                <strong style="color: var(--orange); font-size: 0.88rem;">OPEN (Tripped)</strong>
+                <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">Fail-Closed 503<br>Zero Funds Transferred</p>
+              </div>
+              <div class="circuit-arrow">➔</div>
+              <div class="circuit-node" id="nodeHalfOpen">
+                <div style="font-size: 1.2rem; margin-bottom: 0.3rem;">🟡</div>
+                <strong style="color: var(--volt); font-size: 0.88rem;">HALF-OPEN</strong>
+                <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">Probing Canary<br>Auto-Recovery Check</p>
+              </div>
+            </div>
+
+            <!-- Chaos Controls Box -->
+            <div style="background: #0C0C14; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h4 style="font-size: 1rem; font-weight: 800; color: #FFF; margin-bottom: 0.3rem;">Simulate Upstream Razorpay Outage</h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary);">When flipped, the gateway immediately fails closed without attempting upstream HTTP calls, preventing ghost debits.</p>
+              </div>
+              <div style="display: flex; gap: 0.8rem;">
+                <button class="btn btn-orange" id="btnChaosLabToggle" onclick="toggleChaosFromLab()">
+                  💥 Trip Circuit Breaker
+                </button>
+                <button class="btn btn-secondary" onclick="testOutagePurchase()" id="btnTestOutage">
+                  🧪 Test Purchase Against Outage
+                </button>
+              </div>
+            </div>
+
+            <!-- 3 Stat Metrics -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+              <div style="background: #0E0E16; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1.1rem;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">Active Circuit State</span>
+                <h3 id="chaosLabState" style="color: var(--mint); margin-top: 0.4rem;">CLOSED (Healthy)</h3>
+              </div>
+              <div style="background: #0E0E16; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1.1rem;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">Policy Action Enforced</span>
+                <h3 style="color: #FFF; margin-top: 0.4rem;">Fail-Closed (Zero Ghost Debits)</h3>
+              </div>
+              <div style="background: #0E0E16; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1.1rem;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">HTTP Response Code</span>
+                <h3 style="color: var(--orange); margin-top: 0.4rem;">503 RAZORPAY_UNAVAILABLE</h3>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== VIEW 6: JUDGE DEMONSTRATION PLAYBOOK ==================== -->
+    <div id="viewPlaybook" class="tab-view">
+      <div class="page-intro-header">
+        <div>
+          <h2>🎯 5-Minute Judge Demonstration Playbook</h2>
+          <p>Interactive walkthrough mapping directly to the Track 01 judging criteria.</p>
+        </div>
+        <span class="badge badge-volt">Evaluation Checklist</span>
+      </div>
+
+      <div class="single-column-layout">
+        <div class="card">
+          <div class="card-body" style="gap: 1.2rem;">
+            
+            <div class="playbook-step-card">
+              <div class="step-num-badge">1</div>
+              <div class="step-content-area">
+                <div class="step-title">Compile Natural Language Spending Policy (Hinglish/English)</div>
+                <div class="step-explanation">Demonstrates compiler boundary. The LLM translates conversational Hindi/Hinglish intent into a strict, validated JSON Schema. LLM's job finishes here.</div>
+                <button class="btn btn-secondary" style="width: fit-content; font-size: 0.78rem; padding: 0.4rem 0.85rem;" onclick="switchView('policy')">
+                  👉 Open Policy Studio
+                </button>
+              </div>
+            </div>
+
+            <div class="playbook-step-card">
+              <div class="step-num-badge">2</div>
+              <div class="step-content-area">
+                <div class="step-title">Compliant Purchase (The Happy Path)</div>
+                <div class="step-explanation">Agent buys a ₹450 wooden toy. Pure deterministic evaluator approves the spend within the ₹1,200 cap and generates an authentic Razorpay test payment link.</div>
+                <button class="btn btn-secondary" style="width: fit-content; font-size: 0.78rem; padding: 0.4rem 0.85rem;" onclick="loadAndExecuteScenario('happy_path')">
+                  👉 Run Compliant Purchase
+                </button>
+              </div>
+            </div>
+
+            <div class="playbook-step-card">
+              <div class="step-num-badge">3</div>
+              <div class="step-content-area">
+                <div class="step-title">Merchant Revenue Growth & Headroom Upsell</div>
+                <div class="step-explanation">Fulfills "Grow the merchant's revenue". NIYAM discovers ₹750 of unspent authorized headroom and recommends high-margin add-ons (+₹250 battery pack) without breaching policy.</div>
+                <button class="btn btn-secondary" style="width: fit-content; font-size: 0.78rem; padding: 0.4rem 0.85rem;" onclick="switchView('commerce'); loadScenario('happy_path')">
+                  👉 Inspect Headroom Upsell Chips
+                </button>
+              </div>
+            </div>
+
+            <div class="playbook-step-card">
+              <div class="step-num-badge">4</div>
+              <div class="step-content-area">
+                <div class="step-title">Failure Mode 1: Overspend Gate & 1-Tap WhatsApp Waiver ("Save the Sale")</div>
+                <div class="step-explanation">Agent attempts a ₹1,350 purchase against ₹1,200 cap. Gate halts execution, pops up the simulated WhatsApp Principal Authorization modal, and recovers the sale with 1 tap!</div>
+                <button class="btn btn-secondary" style="width: fit-content; font-size: 0.78rem; padding: 0.4rem 0.85rem;" onclick="loadAndExecuteScenario('marginal_overspend')">
+                  👉 Run Save the Sale Demo
+                </button>
+              </div>
+            </div>
+
+            <div class="playbook-step-card">
+              <div class="step-num-badge">5</div>
+              <div class="step-content-area">
+                <div class="step-title">Idempotency Protection (Zero Double-Charges)</div>
+                <div class="step-explanation">Re-submitting the same purchase key catches duplicate requests and returns cached execution state marked DUPLICATE_SUPPRESSED.</div>
+                <button class="btn btn-secondary" style="width: fit-content; font-size: 0.78rem; padding: 0.4rem 0.85rem;" onclick="loadAndExecuteScenario('idempotency')">
+                  👉 Test Idempotency Retry
+                </button>
+              </div>
+            </div>
+
+            <div class="playbook-step-card">
+              <div class="step-num-badge">6</div>
+              <div class="step-content-area">
+                <div class="step-title">Failure Mode 2: Upstream Outage & Circuit Breaker Fail-Closed</div>
+                <div class="step-explanation">Simulates payment rail outage. The circuit breaker trips into OPEN state, failing closed with 503 RAZORPAY_UNAVAILABLE and zero ghost debits.</div>
+                <button class="btn btn-secondary" style="width: fit-content; font-size: 0.78rem; padding: 0.4rem 0.85rem;" onclick="switchView('chaos')">
+                  👉 Go to Circuit Breaker Lab
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
 
   </main>
+
+  <!-- ==================== SIMULATED WHATSAPP 1-TAP WAIVER MODAL ==================== -->
+  <div class="modal-backdrop" id="saveTheSaleModal">
+    <div class="phone-mockup-frame">
+      <div class="phone-speaker-notch">
+        <div class="notch-pill"></div>
+      </div>
+
+      <div class="whatsapp-header">
+        <div class="whatsapp-contact">
+          <div class="whatsapp-avatar">🛡️</div>
+          <div class="whatsapp-info">
+            <h4>NIYAM Guardian Bot</h4>
+            <span>Online • Verified Business</span>
+          </div>
+        </div>
+        <button class="btn-icon-danger" onclick="closeWaiverModal()" style="color: #FFF; font-size: 1.1rem;">✕</button>
+      </div>
+
+      <div class="whatsapp-chat-body">
+        <div class="wa-bubble-incoming">
+          <div style="font-weight: 800; color: #25D366; font-size: 0.85rem;">
+            🚨 NIYAM Authorization Request
+          </div>
+          <div>
+            AI Buyer <strong>agent_shopper_01</strong> wants to purchase:
+            <br>
+            📦 <span id="waItemTitle" style="color: #FFF; font-weight: 700;">Robotics Building Blocks Set</span>
+            <br>
+            Total: <strong id="waCartTotal" style="color: var(--volt);">₹1,350.00</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.74rem; color: #E2E8F0;">
+            • Policy Cap: <strong>₹1,200.00</strong>
+            <br>
+            • Exceeded by: <strong style="color: #FF6B8B;">₹150.00</strong>
+          </div>
+          <div style="font-size: 0.74rem; color: #94A3B8;">
+            Do you authorize this one-time exception?
+          </div>
+          
+          <div class="wa-actions">
+            <button class="btn-wa-approve" id="btnWaApprove" onclick="approveWaiverFromModal()">
+              ⚡ 1-Tap Authorize Exception (WhatsApp)
+            </button>
+            <button class="btn-wa-reject" onclick="rejectWaiverFromModal()">
+              🚫 Deny Request & Gate Funds
+            </button>
+          </div>
+        </div>
+
+        <div class="wa-bubble-outgoing" id="waBubbleApproved">
+          <div>✅ Exception Authorized by Principal (Rahul). Proceeding with transaction...</div>
+          <div style="font-size: 0.65rem; color: #86EFAC; text-align: right; margin-top: 0.2rem;">Just now • Delivered ✓✓</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>

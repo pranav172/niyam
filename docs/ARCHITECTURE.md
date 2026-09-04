@@ -122,3 +122,17 @@ The National Payments Corporation of India (NPCI) is developing the **Unified Ag
 - **Stateless Evaluator:** The core evaluator has zero external state and can horizontally scale to 100,000+ requests/sec across any container cluster.
 - **Database Partitioning Strategy:** In production, high-frequency append-only audit logs are partitioned by month and separated from semantic product catalog vector storage.
 - **Rate-Limiting per `agent_id`:** In addition to global IP rate limiting, token-bucket limits are enforced per agent ID to prevent runaway agent loops from exhausting merchant inventory or evaluation capacity.
+
+---
+
+## 7. Phased Rollout Roadmap
+
+To scale NIYAM safely across enterprise merchants and autonomous buyer ecosystems, we define a 4-phase rollout methodology:
+
+| Phase | Milestone | Scope | Risk Mitigation |
+|---|---|---|---|
+| **Phase 1: Shadow Mode (Passive Gate)** | Merchant Pilot Observation | NIYAM runs in passive observation mode behind existing merchant checkout APIs. Logs policy evaluations and detects rogue agent behavior without blocking live customer checkouts. | Zero disruption to existing checkout conversion. Baseline transaction behavior profile built. |
+| **Phase 2: Closed Sandbox (Enforced Gate)** | Verified Partner Pilots | 5 selected merchant partners and autonomous agent frameworks deploy NIYAM with enforced gating, 1-tap WhatsApp policy waivers ("Save the Sale"), and CSV compliance audits. | Strict fail-closed circuit breaker. Human principal approval required for any marginal cap delta. |
+| **Phase 3: NPCI UAP Federation** | Open Banking Integration | Direct integration with NPCI's Unified Agent Protocol (UAP) decentralized registry. Public-key infrastructure (PKI) token validation replaces static pre-shared tokens. | Cryptographic signature verification over agent delegation certificates. Native UPI Mandate auto-settlement. |
+| **Phase 4: Autonomous Clearinghouse** | Scaled Merchant Network | Multi-merchant agent clearinghouse with cross-merchant cumulative spend quotas, dynamic risk underwriting, and automated disputes management. | Multi-region active-active deployment with sub-millisecond p99 latency SLA and zero-loss WAL synchronization. |
+

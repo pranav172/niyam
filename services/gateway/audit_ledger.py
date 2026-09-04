@@ -112,3 +112,32 @@ class AuditLedger:
                 "compliance_rate": f"{(approved + denied) / max(1, total) * 100:.1f}%",
                 "zero_unrecorded_failures": True
             }
+
+    def export_csv(self, user_id: Optional[str] = None) -> str:
+        """Exports audit logs into RFC-4180 compliant CSV string for compliance reporting."""
+        import csv
+        import io
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+        writer.writerow([
+            "Timestamp", "Log ID", "Agent ID", "User ID", "Action", 
+            "Amount (INR)", "Razorpay Ref", "Explainability", "Failure Handled"
+        ])
+        with self._lock:
+            logs = self._in_memory_logs
+            if user_id:
+                logs = [l for l in logs if l.get("user_id") == user_id]
+            for entry in logs:
+                writer.writerow([
+                    entry.get("ts"),
+                    entry.get("id"),
+                    entry.get("agent_id"),
+                    entry.get("user_id"),
+                    entry.get("action"),
+                    f"{entry.get('amount', 0.0):.2f}",
+                    entry.get("razorpay_ref") or "N/A",
+                    entry.get("explainability", "").replace("\n", " "),
+                    "YES" if entry.get("is_failure_handled") else "NO"
+                ])
+        return output.getvalue()
+
