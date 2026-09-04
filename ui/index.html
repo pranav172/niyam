@@ -36,6 +36,42 @@
     </div>
   </header>
 
+  <!-- Interactive Testing Playbook Bar -->
+  <div class="guide-banner">
+    <div class="guide-title">
+      <span>🎯</span> Interactive Testing Playbook:
+    </div>
+    <div class="guide-steps">
+      <button class="guide-pill active" onclick="runPlaybookStep(1)" id="pillStep1">
+        1️⃣ Compile Policy (Hinglish)
+      </button>
+      <button class="guide-pill" onclick="runPlaybookStep(2)" id="pillStep2">
+        2️⃣ Compliant Purchase (₹450)
+      </button>
+      <button class="guide-pill" onclick="runPlaybookStep(3)" id="pillStep3">
+        3️⃣ Growth Upsell (+₹250 AOV)
+      </button>
+      <button class="guide-pill" onclick="runPlaybookStep(4)" id="pillStep4">
+        4️⃣ Failure Mode 1 (Overspend & Waiver)
+      </button>
+      <button class="guide-pill" onclick="runPlaybookStep(5)" id="pillStep5">
+        5️⃣ Idempotency (Retry Safe)
+      </button>
+      <button class="guide-pill" onclick="runPlaybookStep(6)" id="pillStep6">
+        6️⃣ Failure Mode 2 (Chaos Outage)
+      </button>
+    </div>
+  </div>
+
+  <!-- Instruction Walkthrough Alert Box -->
+  <div id="playbookTipBox" style="background: #101622; border-bottom: 1px solid var(--border-color); padding: 0.65rem 2rem; font-size: 0.8rem; color: #94A3B8; display: flex; align-items: center; justify-content: space-between;">
+    <div>
+      <strong id="playbookTipTitle" style="color: var(--primary-mint);">Step 1: Policy Compilation:</strong> 
+      <span id="playbookTipBody">Edit the Hinglish policy text in Column 1 and click 'Compile & Activate' to see the deterministic JSON Schema generated with zero LLMs on the financial path.</span>
+    </div>
+    <span style="font-size: 0.72rem; color: #64748B; font-family: monospace;">Track 01 Judge Playbook</span>
+  </div>
+
   <!-- Metrics Bar -->
   <div class="metrics-strip">
     <div class="metric-item">

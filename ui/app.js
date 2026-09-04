@@ -520,3 +520,43 @@ function refreshAll() {
   refreshMetrics();
   checkChaosStatus();
 }
+
+function runPlaybookStep(step) {
+  // Update active pill styling
+  for (let i = 1; i <= 6; i++) {
+    const el = document.getElementById(`pillStep${i}`);
+    if (el) el.classList.remove("active");
+  }
+  const activePill = document.getElementById(`pillStep${step}`);
+  if (activePill) activePill.classList.add("active");
+
+  const titleEl = document.getElementById("playbookTipTitle");
+  const bodyEl = document.getElementById("playbookTipBody");
+
+  if (step === 1) {
+    titleEl.innerText = "Step 1: Policy Compilation (Hinglish/English)";
+    bodyEl.innerText = "Edit the Hinglish spending prompt in Column 1 and click 'Compile & Activate'. Watch the compiler validate against JSON Schema and emit an immutable v(n+1) policy.";
+    document.getElementById("policyInput").focus();
+  } else if (step === 2) {
+    titleEl.innerText = "Step 2: Compliant Purchase (Happy Path)";
+    bodyEl.innerText = "Loaded ₹450 Wooden Teddy Bear. Click 'Submit Purchase to Gateway' to see the deterministic evaluator approve the transaction and generate an authentic Razorpay test payment link.";
+    loadScenario("happy_path");
+  } else if (step === 3) {
+    titleEl.innerText = "Step 3: Growth Engine & Merchant Upsells";
+    bodyEl.innerText = "Notice the 'Authorized Headroom: ₹750 Available'. Click '+ Eco Rechargeable Battery Pack' to grow merchant AOV to ₹700 while staying compliant with user policy!";
+    loadScenario("happy_path");
+  } else if (step === 4) {
+    titleEl.innerText = "Step 4: Failure Mode 1 & 1-Tap Waiver Recovery";
+    bodyEl.innerText = "Loaded ₹1,350 Robotics Kit (breaching ₹1,200 cap). Submit to see NIYAM block it, dispatch an escalation alert, and offer a 1-Tap WhatsApp Waiver to recover the sale!";
+    loadScenario("marginal_overspend");
+  } else if (step === 5) {
+    titleEl.innerText = "Step 5: Idempotency Retry Protection";
+    bodyEl.innerText = "Autonomous shopping agents retry on network blips. Click 'Submit Purchase' and then 'Retry Same Key' to see DUPLICATE_SUPPRESSED prevent double charging!";
+    loadScenario("idempotency");
+  } else if (step === 6) {
+    titleEl.innerText = "Step 6: Failure Mode 2 & Circuit Breaker Outage";
+    bodyEl.innerText = "Simulating upstream Razorpay outage (Circuit Breaker OPEN). Submit to see NIYAM fail closed with 503 RAZORPAY_UNAVAILABLE, guaranteeing zero ghost debits.";
+    loadScenario("chaos");
+  }
+}
+
