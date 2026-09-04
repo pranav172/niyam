@@ -6,8 +6,10 @@
 
 [![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)](https://fastapi.tiangolo.com)
-[![Pytest](https://img.shields.io/badge/Tests-27%20Passed-brightgreen.svg)](services/evaluator/tests)
-[![Verification](https://img.shields.io/badge/E2E%20Verification-7%2F7%20Passed-brightgreen.svg)](run.py)
+[![Pytest](https://img.shields.io/badge/Tests-35%20Passed-brightgreen.svg)](services/evaluator/tests)
+[![Verification](https://img.shields.io/badge/E2E%20Verification-8%2F8%20Passed-brightgreen.svg)](run.py)
+[![Scenarios](https://img.shields.io/badge/Scenarios-12%20Real--World%20Cases-purple.svg)](ui/)
+[![WhatsApp Rails](https://img.shields.io/badge/WhatsApp-Live%20Twilio%20%2B%20Sandbox-25D366.svg)](services/growth/whatsapp.py)
 [![UAP Ready](https://img.shields.io/badge/Protocol-NPCI%20UAP%20Aligned-orange.svg)](docs/ARCHITECTURE.md)
 [![Razorpay](https://img.shields.io/badge/Payments-Razorpay%20MCP-0C2340.svg)](https://mcp.razorpay.com/mcp)
 [![Zero Blue Theme](https://img.shields.io/badge/UI%20Design-Electric%20Volt%20%26%20Slate-CCFF00.svg)](ui/)
@@ -83,23 +85,24 @@ Open your browser to: **[http://localhost:8000](http://localhost:8000)**
   - Click **"Submit Purchase"**—it is approved without any policy breach, safely expanding merchant basket size!
 
 ### Step 4: Test Failure Mode 1 & WhatsApp 1-Tap Waiver ("Save the Sale")
-- Click the **⚡ Scenario Lab** tab.
-- Click **"Run Scenario"** on **Scenario 2: Marginal Overspend (Save the Sale)** (Cart total: ₹1,350 vs ₹1,200 cap).
+- Click the **⚡ Scenario Lab** tab to browse all **12 Real-World Scenarios** (Rate Limits, Time-Windows, Merchant Blacklists, MTD Budgets, COD Caps, etc.).
+- Click **"📲 Load & Trigger Waiver Modal"** on **Scenario 2: Marginal Overspend (Save the Sale)** (Cart total: ₹1,350 vs ₹1,200 cap).
 - **What happens:**
-  - Policy gate strictly blocks the transaction (`REASON: PER_TRANSACTION_EXCEEDED`).
+  - Policy gate strictly blocks the transaction (`REASON: PER_TRANSACTION_LIMIT_EXCEEDED`).
   - An auditory alert chime plays.
-  - A simulated **WhatsApp Smartphone Modal** pops up on screen showing:
+  - A responsive **Save-the-Sale banner** displays a **"📲 1-Tap Mobile Link ↗"** and a simulated **WhatsApp Smartphone Frame** showing:
     > *🚨 NIYAM Authorization Request: AI Buyer wants to purchase Robotics Building Blocks Set (₹1,350). Cap is ₹1,200. Exceeded by ₹150. Do you authorize this exception?*
-  - Click **"⚡ 1-Tap Authorize Exception (WhatsApp)"**.
-  - The phone shows an outgoing confirmation bubble, the exception is authorized with principal approval, and the transaction is saved!
+  - **Live Mobile Auth:** Tap the mobile link to open `GET /waivers/{id}/approve?token=...` with cryptographic HMAC single-use tokens.
+  - **Live WhatsApp Integration:** When `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` are set, NIYAM dispatches the message directly to the principal's physical smartphone via WhatsApp API!
+  - Click **"⚡ 1-Tap Authorize Exception"**—the exception is recorded in the audit ledger and checkout unlocks seamlessly!
 
 ### Step 5: Test Atomic Cart Split & Partial Fulfillment
-- In **Scenario Lab**, click **Scenario 3: Restricted Category Breach** (Cart contains ₹450 Wooden Toy + ₹1,500 Prohibited Tablet).
+- In **Scenario Lab**, click **Scenario 12: Atomic Cart Split & Partial Fulfillment** (Cart contains ₹450 Wooden Toy + ₹899 Prohibited Earbuds).
 - **What happens:**
-  - NIYAM blocks the prohibited electronics item, but **does not kill the whole cart**.
-  - A green banner appears: **"🛒 Atomic Cart Split & Partial Fulfillment Available: 1 of 2 items compliant."**
+  - NIYAM blocks the prohibited electronics item, but **does not abandon the sale**.
+  - A banner appears: **"🛒 Atomic Cart Split & Partial Fulfillment Available: 1 of 2 items compliant."**
   - Click **"⚡ Fulfill Compliant Items Only (₹450.00)"**.
-  - NIYAM immediately splits the cart, drops the prohibited item, and completes the ₹450 purchase!
+  - NIYAM immediately splits the cart, isolates the compliant subset, and completes the ₹450 purchase with Razorpay UPI links!
 
 ### Step 6: Test Idempotency (Zero Double-Charges on Retry)
 - Go back to the **🤖 Agent Terminal** tab.

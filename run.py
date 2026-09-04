@@ -22,13 +22,13 @@ def run_verification():
     print("=" * 70)
 
     # 1. Healthcheck
-    print("\n[1/6] Testing Gateway Healthcheck...")
+    print("\n[1/8] Testing Gateway Healthcheck...")
     res = client.get("/healthz")
     assert res.status_code == 200, f"Healthcheck failed: {res.text}"
     print("  ✅ Gateway Online & Healthy.")
 
     # 2. Compile Hinglish Policy
-    print("\n[2/6] Compiling Hinglish Spending Mandate via Policy Compiler...")
+    print("\n[2/8] Compiling Hinglish Spending Mandate via Policy Compiler...")
     prompt = "Baccho ke toys ke liye max 1200 per order, electronics bilkul nahi, monthly 8000 se upar mat hone dena. Sirf returnable items lena."
     res = client.post("/policies", json={"user_id": "usr_rahul_982", "prompt": prompt})
     assert res.status_code == 200, f"Policy compilation failed: {res.text}"
@@ -40,7 +40,7 @@ def run_verification():
     print(f"     Returnable Only: {policy['constraints']['returnable_only']}")
 
     # 3. Happy Path: Compliant Purchase
-    print("\n[3/6] Testing Compliant Purchase (Wooden Teddy Bear ₹450)...")
+    print("\n[3/8] Testing Compliant Purchase (Wooden Teddy Bear ₹450)...")
     idemp_key = f"idemp_test_run_{int(time.time())}"
     purchase_payload = {
         "agent_id": "agent_shopper_01",
@@ -68,7 +68,7 @@ def run_verification():
     print(f"     Explainability: {data['explainability']}")
 
     # 4. Idempotency Check: Network Retry
-    print("\n[4/6] Testing Idempotency Gate (Re-submitting same key)...")
+    print("\n[4/8] Testing Idempotency Gate (Re-submitting same key)...")
     res_retry = client.post("/purchase", json=purchase_payload)
     assert res_retry.status_code == 200
     retry_data = res_retry.json()
@@ -76,7 +76,7 @@ def run_verification():
     print(f"  ✅ DUPLICATE_SUPPRESSED caught! Double debit prevented.")
 
     # 5. Failure Mode 1: Overspend & Forbidden Category
-    print("\n[5/6] Testing Failure Mode 1 (Flagship Smartphone ₹79,999)...")
+    print("\n[5/8] Testing Failure Mode 1 (Flagship Smartphone ₹79,999)...")
     overspend_payload = {
         "agent_id": "agent_shopper_01",
         "user_id": "usr_rahul_982",
@@ -104,7 +104,7 @@ def run_verification():
     print(f"     Escalation Dispatched: {err['escalation']['voice_callback_dispatched']}")
 
     # 6. Failure Mode 2: Razorpay Outage & Circuit Breaker
-    print("\n[6/6] Testing Failure Mode 2 (Simulated Razorpay Outage / Chaos Mode)...")
+    print("\n[6/8] Testing Failure Mode 2 (Simulated Razorpay Outage / Chaos Mode)...")
     # Trip the circuit breaker
     razorpay_client.circuit_breaker.set_chaos_mode(True)
     outage_payload = {
@@ -135,7 +135,7 @@ def run_verification():
     razorpay_client.circuit_breaker.set_chaos_mode(False)
 
     # 7. Growth & Conversion Recovery: "Save the Sale" 1-Tap Policy Waiver
-    print("\n[7/7] Testing 'Save the Sale' 1-Tap Waiver (Conversion Recovery)...")
+    print("\n[7/8] Testing 'Save the Sale' 1-Tap Waiver (Conversion Recovery)...")
     marginal_payload = {
         "agent_id": "agent_shopper_01",
         "user_id": "usr_rahul_982",
@@ -181,7 +181,24 @@ def run_verification():
     upsell_data = res_growth.json()
     print(f"  ✅ Policy-Aware Upsells: {upsell_data['recommendations_count']} recommendations generated within remaining headroom.")
 
-    # 8. Verify Audit Ledger Records
+    # 8. Mobile WhatsApp Authorization Link Verification
+    print("\n[8/8] Testing Mobile WhatsApp Authorization Link (HMAC Verification)...")
+    from services.gateway.main import growth_engine, whatsapp_notifier
+    test_waiver = growth_engine.waiver_manager.request_waiver(
+        user_id="usr_rahul_982",
+        agent_id="agent_shopper_01",
+        cart_total=1450.0,
+        policy_limit=1200.0,
+        reason="Testing mobile WhatsApp approval link"
+    )
+    token = whatsapp_notifier.generate_waiver_token(test_waiver.waiver_id, test_waiver.expires_at)
+    mobile_res = client.get(f"/waivers/{test_waiver.waiver_id}/approve?token={token}")
+    assert mobile_res.status_code == 200
+    assert "NIYAM Policy Waiver Applied" in mobile_res.text
+    print(f"  ✅ Mobile 1-Tap Web Authorization Successful! (Token: {token})")
+    print(f"     Waiver ID: {test_waiver.waiver_id} status updated to APPROVED.")
+
+    # Verify Audit Ledger Records
     print("\n[Audit Ledger Inspection]")
     audit_res = client.get("/audit/logs?limit=15")
     logs = audit_res.json()["logs"]
@@ -190,7 +207,7 @@ def run_verification():
         print(f"     • [{log['action']}] ₹{log['amount']} -> {log['explainability'][:55]}...")
 
     print("\n" + "=" * 70)
-    print(" 🎉 ALL VERIFICATION SUITES PASSED! TRACK 01 BAR 100% SATISFIED.")
+    print(" 🎉 ALL 8/8 VERIFICATION SUITES PASSED! TRACK 01 BAR 100% SATISFIED.")
     print("=" * 70)
 
 

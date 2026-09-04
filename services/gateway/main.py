@@ -33,6 +33,7 @@ from services.gateway.rate_limiter import TokenBucketRateLimiter
 from services.mcp_client.razorpay_client import RazorpayMCPClient
 from services.mcp_client.circuit_breaker import CircuitBreakerOpenException
 from services.growth.engine import GrowthEngine
+from services.growth.whatsapp import WhatsAppNotifier
 
 
 # Initialize FastAPI
@@ -50,13 +51,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def add_correlation_id(request: Request, call_next):
+    trace_id = request.headers.get("X-Request-ID") or f"req_{uuid.uuid4().hex[:12]}"
+    request.state.trace_id = trace_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = trace_id
+    return response
+
+
 # Core Gateway Services
 compiler = PolicyCompiler()
 idempotency_mgr = IdempotencyManager(ttl_seconds=86400)
 audit_ledger = AuditLedger(data_dir="data")
 razorpay_client = RazorpayMCPClient()
 growth_engine = GrowthEngine()
-rate_limiter = TokenBucketRateLimiter(capacity=50, refill_rate_per_sec=10.0)
+whatsapp_notifier = WhatsAppNotifier()
+rate_limiter = TokenBucketRateLimiter(capacity=10, refill_rate_per_sec=2.0)
 
 
 # In-memory stores (persisted to disk via audit_ledger snapshots)
@@ -102,9 +114,19 @@ class WaiverCreateRequest(BaseModel):
 
 # Pre-seed baseline demo data
 def _seed_demo_state():
+    from services.compiler.schema import TimeWindow
     default_user = "usr_rahul_982"
     initial_prompt = "Baccho ke toys ke liye max 1200 per order, electronics bilkul nahi, monthly 8000 se upar mat hone dena. Sirf returnable items lena."
     p1 = compiler.compile(initial_prompt, default_user, current_version="v0")
+    
+    # Enterprise guardrail seeds for comprehensive scenario evaluation:
+    p1.constraints.blocked_merchants = ["merch_fraud_unverified", "merch_blacklisted_electronics"]
+    p1.constraints.cod_allowed_above = 500.0
+    p1.time_window = TimeWindow(
+        active_hours="06:00-23:00",
+        timezone="Asia/Kolkata",
+        allowed_days=["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    )
     user_policies[default_user] = [p1]
     user_spend_states[default_user] = UserSpendState(
         user_id=default_user,
@@ -122,6 +144,16 @@ def _seed_demo_state():
         "hashed_key": hashed,
         "registered_at": datetime.now(timezone.utc).isoformat()
     }
+
+    # Pre-seed secondary user for near-limit monthly spend testing
+    near_user = "usr_near_limit_982"
+    p_near = p1.model_copy(update={"user_id": near_user})
+    user_policies[near_user] = [p_near]
+    user_spend_states[near_user] = UserSpendState(
+        user_id=near_user,
+        monthly_spend_accumulated=7600.0,
+        category_spend_accumulated={"toys": 4500.0, "groceries": 3100.0}
+    )
 
 _seed_demo_state()
 
@@ -326,7 +358,11 @@ def execute_purchase(request: PurchaseRequest, x_agent_key: Optional[str] = Head
                 reason=eval_result.explainability
             )
 
-            # Simulate high-priority escalation (Voice callback / SMS / Webhook)
+            # Dispatch real WhatsApp alert (or simulated in zero-config mode)
+            item_title = request.items[0].title if request.items else "Requested Item"
+            wa_alert = whatsapp_notifier.dispatch_waiver_alert(pending_waiver, item_title)
+
+            # High-priority escalation logged to ledger
             escalation_triggered = True
             audit_entry = audit_ledger.record_entry(
                 agent_id=request.agent_id,
@@ -341,7 +377,8 @@ def execute_purchase(request: PurchaseRequest, x_agent_key: Optional[str] = Head
                     "threshold": eval_result.threshold,
                     "actual_value": eval_result.actual_value,
                     "item_evaluations": [ie.model_dump() for ie in eval_result.item_evaluations],
-                    "waiver_offered": pending_waiver.waiver_id
+                    "waiver_offered": pending_waiver.waiver_id,
+                    "whatsapp_dispatch_mode": wa_alert.get("mode")
                 },
                 explainability=eval_result.explainability,
                 razorpay_ref=None,
@@ -364,7 +401,11 @@ def execute_purchase(request: PurchaseRequest, x_agent_key: Optional[str] = Head
                         "waiver_id": pending_waiver.waiver_id,
                         "delta_amount": pending_waiver.delta_amount,
                         "expires_in_seconds": int(pending_waiver.expires_at - time.time()),
-                        "one_tap_approve_url": f"/growth/waiver/approve/{pending_waiver.waiver_id}"
+                        "one_tap_approve_url": f"/growth/waiver/approve/{pending_waiver.waiver_id}",
+                        "mobile_approve_url": wa_alert["approve_url"],
+                        "whatsapp_mode": wa_alert["mode"],
+                        "recipient_phone": wa_alert["recipient_phone"],
+                        "token": wa_alert["token"]
                     },
                     "partial_fulfillment_option": (
                         growth_engine.analyze_partial_fulfillment(active_policy, request.items).model_dump()
@@ -605,6 +646,79 @@ def get_waiver_status(waiver_id: str):
     if not waiver:
         raise HTTPException(status_code=404, detail="Waiver not found")
     return {"waiver": waiver}
+
+
+@app.get("/waivers/{waiver_id}/approve", response_class=HTMLResponse)
+def mobile_approve_waiver(waiver_id: str, token: str):
+    """Mobile-responsive 1-tap authorization endpoint for WhatsApp action links."""
+    waiver = growth_engine.waiver_manager.get_waiver(waiver_id)
+    if not waiver:
+        return HTMLResponse(
+            status_code=404,
+            content="""<!DOCTYPE html><html><body style="background:#060608;color:#FFF;font-family:sans-serif;text-align:center;padding:3rem;">
+            <h2>🚫 Authorization Link Expired or Invalid</h2>
+            <p style="color:#94A3B8;">This policy waiver request is no longer valid or has already expired.</p>
+            </body></html>"""
+        )
+    
+    if not whatsapp_notifier.verify_waiver_token(waiver_id, waiver.expires_at, token):
+        return HTMLResponse(
+            status_code=403,
+            content="""<!DOCTYPE html><html><body style="background:#060608;color:#FFF;font-family:sans-serif;text-align:center;padding:3rem;">
+            <h2>🚫 Unauthorized Token</h2>
+            <p style="color:#FF1744;">Cryptographic signature verification failed. Authorization denied.</p>
+            </body></html>"""
+        )
+    
+    approved = growth_engine.waiver_manager.approve_waiver(waiver_id)
+    audit_ledger.record_entry(
+        agent_id=waiver.agent_id,
+        user_id=waiver.user_id,
+        action="WAIVER_APPROVED",
+        amount=waiver.delta_amount,
+        policy_snapshot=None,
+        decision={"waiver_id": waiver_id, "delta_authorized": waiver.delta_amount, "channel": "whatsapp_mobile_1tap"},
+        explainability=f"1-Tap Mobile WhatsApp Waiver Approved: Principal authorized ₹{waiver.delta_amount:,.2f} delta for {waiver.agent_id}.",
+        is_failure_handled=True
+    )
+    
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NIYAM — Exception Authorized</title>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #060608; color: #FFFFFF; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 1rem; }}
+    .card {{ background: #111116; border: 1px solid rgba(0, 245, 155, 0.4); border-radius: 18px; padding: 2.2rem; max-width: 440px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(0,245,155,0.15); text-align: center; }}
+    .badge {{ background: #00F59B; color: #002917; font-size: 0.76rem; font-weight: 800; padding: 0.35rem 0.8rem; border-radius: 20px; display: inline-block; letter-spacing: 0.5px; text-transform: uppercase; }}
+    h1 {{ font-size: 1.35rem; margin-top: 1.1rem; color: #CCFF00; font-weight: 800; }}
+    p {{ font-size: 0.88rem; color: #9E9EB8; line-height: 1.5; margin-top: 0.6rem; }}
+    .details-box {{ background: #08080C; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1rem; margin: 1.5rem 0; text-align: left; font-size: 0.82rem; }}
+    .row {{ display: flex; justify-content: space-between; margin-bottom: 0.45rem; }}
+    .row strong {{ color: #FFF; }}
+    .row span {{ color: #9E9EB8; }}
+    .footer-note {{ font-size: 0.78rem; color: #00F59B; font-weight: 700; margin-top: 1rem; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">✓ Exception Authorized</span>
+    <h1>NIYAM Policy Waiver Applied</h1>
+    <p>You have successfully approved a one-time budget delta of <strong>₹{waiver.delta_amount:,.2f}</strong> for autonomous buyer <strong>{waiver.agent_id}</strong>.</p>
+    
+    <div class="details-box">
+      <div class="row"><span>Waiver ID:</span> <strong>{waiver_id}</strong></div>
+      <div class="row"><span>Cart Total:</span> <strong>₹{waiver.cart_total:,.2f}</strong></div>
+      <div class="row"><span>Authorized Delta:</span> <strong style="color: #00F59B;">+₹{waiver.delta_amount:,.2f}</strong></div>
+      <div class="row"><span>Channel:</span> <strong>WhatsApp 1-Tap</strong></div>
+    </div>
+
+    <div class="footer-note">⚡ The autonomous agent checkout has been unlocked. You may now close this screen.</div>
+  </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html_content)
 
 
 @app.post("/chaos/toggle")

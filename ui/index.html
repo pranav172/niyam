@@ -217,7 +217,7 @@
           <h2>⚡ Autonomous Buyer Scenarios</h2>
           <p>Pre-configured real-world commerce transactions testing compliance, growth waivers, and failure resilience.</p>
         </div>
-        <span class="badge badge-violet">6 Standard Scenarios</span>
+        <span class="badge badge-violet">12 Real-World Scenarios</span>
       </div>
 
       <div class="grid-three-column">
@@ -309,6 +309,96 @@
           </div>
           <button class="btn btn-secondary" onclick="loadAndExecuteScenario('idempotency')">
             🔁 Test Idempotency Retry
+          </button>
+        </div>
+
+        <!-- Scenario 7: Runaway Loop Rate Limit -->
+        <div class="sc-showcase-card" style="border-color: rgba(255, 145, 0, 0.4);">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">⚡ Runaway Loop Limiter</span>
+              <span class="badge badge-orange">Burst 429</span>
+            </div>
+            <p class="sc-showcase-desc">Fires 12 rapid requests simulating an infinite agent loop. Token bucket throttles excess bursts with HTTP 429.</p>
+            <div class="sc-showcase-rule">Rule: TokenBucket (capacity=10, refill=2/s)</div>
+          </div>
+          <button class="btn btn-secondary" style="border-color: var(--orange); color: var(--orange);" onclick="loadAndExecuteScenario('rate_limit_burst')">
+            ⚡ Test Runaway Loop Burst
+          </button>
+        </div>
+
+        <!-- Scenario 8: Nighttime Time-Window Violation -->
+        <div class="sc-showcase-card">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">🌙 After-Hours Breach</span>
+              <span class="badge badge-rose">₹650.00</span>
+            </div>
+            <p class="sc-showcase-desc">Agent attempts purchase at 02:30 AM IST. Policy restricts purchasing to active hours (06:00-23:00 IST). Blocked instantly.</p>
+            <div class="sc-showcase-rule">Rule: time_window.active_hours (06:00-23:00)</div>
+          </div>
+          <button class="btn btn-secondary" onclick="loadAndExecuteScenario('after_hours')">
+            🚫 Test Nighttime Window
+          </button>
+        </div>
+
+        <!-- Scenario 9: Cash-On-Delivery Below Limit -->
+        <div class="sc-showcase-card">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">💵 COD Threshold Breach</span>
+              <span class="badge badge-rose">₹320.00</span>
+            </div>
+            <p class="sc-showcase-desc">Agent attempts Cash on Delivery for ₹320. Policy mandates COD is only authorized for orders above ₹500.</p>
+            <div class="sc-showcase-rule">Rule: constraints.cod_allowed_above (₹500.00)</div>
+          </div>
+          <button class="btn btn-secondary" onclick="loadAndExecuteScenario('cod_restriction')">
+            🚫 Test COD Restriction
+          </button>
+        </div>
+
+        <!-- Scenario 10: Rogue / Blacklisted Merchant -->
+        <div class="sc-showcase-card">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">🛑 Blacklisted Seller</span>
+              <span class="badge badge-rose">₹550.00</span>
+            </div>
+            <p class="sc-showcase-desc">Action figure from unverified seller 'merch_fraud_unverified'. Explicitly blacklisted by fraud prevention guardrail.</p>
+            <div class="sc-showcase-rule">Rule: constraints.blocked_merchants</div>
+          </div>
+          <button class="btn btn-secondary" onclick="loadAndExecuteScenario('blacklisted_merchant')">
+            🚫 Test Merchant Filter
+          </button>
+        </div>
+
+        <!-- Scenario 11: Cumulative Monthly Budget Cap -->
+        <div class="sc-showcase-card">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">📊 Monthly Budget Cap</span>
+              <span class="badge badge-rose">₹1,100.00</span>
+            </div>
+            <p class="sc-showcase-desc">Drone is ₹1,100 (&lt; ₹1.2k tx cap), but user MTD spend is ₹7,600. Total reaches ₹8,700, breaching ₹8,000 monthly cap!</p>
+            <div class="sc-showcase-rule">Rule: limits.monthly_cap (₹8,000.00 MTD)</div>
+          </div>
+          <button class="btn btn-secondary" onclick="loadAndExecuteScenario('monthly_budget_exhausted')">
+            🚫 Test Monthly Cap Gate
+          </button>
+        </div>
+
+        <!-- Scenario 12: Atomic Cart Split & Partial Fulfillment -->
+        <div class="sc-showcase-card" style="border-color: rgba(0, 245, 155, 0.4);">
+          <div class="sc-showcase-top">
+            <div class="sc-showcase-header">
+              <span class="sc-showcase-name">✂️ Partial Cart Split</span>
+              <span class="badge badge-mint">₹1,349.00</span>
+            </div>
+            <p class="sc-showcase-desc">Multi-item cart has 1 compliant toy (₹450) and 1 prohibited earphone (₹899). Automatically splits cart and offers 1-tap partial fulfillment!</p>
+            <div class="sc-showcase-rule">Growth Engine: Partial Cart Split</div>
+          </div>
+          <button class="btn btn-mint" onclick="loadAndExecuteScenario('atomic_split')">
+            🛒 Test Cart Split Runner
           </button>
         </div>
 
@@ -650,6 +740,12 @@
         <button class="btn-icon-danger" onclick="closeWaiverModal()" style="color: #FFF; font-size: 1.1rem;">✕</button>
       </div>
 
+      <!-- Channel & Phone Ribbon -->
+      <div style="padding: 0.35rem 0.8rem; background: rgba(0,0,0,0.4); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.72rem;">
+        <span style="color: #94A3B8;">To: <strong id="waRecipientPhone" style="color: #FFF;">+91 98765 43210</strong></span>
+        <span id="waModeBadge" class="badge badge-mint" style="font-size: 0.65rem;">Sandbox Simulator</span>
+      </div>
+
       <div class="whatsapp-chat-body">
         <div class="wa-bubble-incoming">
           <div style="font-weight: 800; color: #25D366; font-size: 0.85rem;">
@@ -667,6 +763,13 @@
             <br>
             • Exceeded by: <strong style="color: #FF6B8B;">₹150.00</strong>
           </div>
+
+          <!-- Direct Mobile Link Block -->
+          <div style="background: rgba(0,0,0,0.3); padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.72rem; border-left: 3px solid #25D366;">
+            <div style="color: #94A3B8; margin-bottom: 0.2rem;">👉 Direct Mobile Auth Link:</div>
+            <a id="waMobileLinkBtn" href="#" target="_blank" style="color: #25D366; text-decoration: underline; font-weight: 700; word-break: break-all;">Open 1-Tap Authorization Screen ↗</a>
+          </div>
+
           <div style="font-size: 0.74rem; color: #94A3B8;">
             Do you authorize this one-time exception?
           </div>

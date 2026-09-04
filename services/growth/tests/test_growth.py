@@ -94,3 +94,91 @@ def test_partial_fulfillment_split(test_policy):
     assert option.compliant_subtotal == 450.0
     assert option.gated_amount == 899.0
 
+
+def test_whatsapp_notifier_token_lifecycle():
+    """Validates cryptographic HMAC token generation and verification."""
+    from services.growth.whatsapp import WhatsAppNotifier
+    notifier = WhatsAppNotifier()
+    waiver_id = "wv_test_998877"
+    expires_at = 1757000000.0
+
+    token = notifier.generate_waiver_token(waiver_id, expires_at)
+    assert isinstance(token, str)
+    assert len(token) == 24
+
+    # Valid verification
+    assert notifier.verify_waiver_token(waiver_id, expires_at, token) is True
+
+    # Tampered token
+    assert notifier.verify_waiver_token(waiver_id, expires_at, "invalid_token_123456789") is False
+
+    # Tampered waiver ID or expiry
+    assert notifier.verify_waiver_token("wv_different", expires_at, token) is False
+    assert notifier.verify_waiver_token(waiver_id, expires_at + 100, token) is False
+
+
+def test_whatsapp_notifier_dispatch_simulated():
+    """Validates simulated WhatsApp dispatch and message structure."""
+    from services.growth.whatsapp import WhatsAppNotifier
+    from services.growth.engine import PolicyWaiver
+    import time
+
+    notifier = WhatsAppNotifier(public_base_url="https://niyam.onrender.com")
+    waiver = PolicyWaiver(
+        waiver_id="wv_demo_123",
+        user_id="usr_rahul_982",
+        agent_id="agent_shopper_01",
+        cart_total=2499.0,
+        policy_limit=1500.0,
+        delta_amount=999.0,
+        reason="Exceeds ₹1,500 limit",
+        status="PENDING",
+        created_at=time.time(),
+        expires_at=time.time() + 900
+    )
+
+    alert = notifier.dispatch_waiver_alert(waiver, item_title="Mechanical Keyboard")
+
+    assert alert["waiver_id"] == "wv_demo_123"
+    assert alert["mode"] == "simulated"
+    assert alert["dispatched"] is True
+    assert "https://niyam.onrender.com/waivers/wv_demo_123/approve?token=" in alert["approve_url"]
+    assert "Mechanical Keyboard" in alert["message_preview"]
+    assert "₹2,499.00" in alert["message_preview"]
+    assert "₹999.00" in alert["message_preview"]
+
+
+def test_whatsapp_notifier_twilio_fallback():
+    """Validates graceful degradation if Twilio API credentials fail or network errors out."""
+    from services.growth.whatsapp import WhatsAppNotifier
+    from services.growth.engine import PolicyWaiver
+    import time
+
+    # Provide dummy credentials that will fail HTTP post
+    notifier = WhatsAppNotifier(
+        account_sid="AC_dummy_sid_00000",
+        auth_token="dummy_auth_token_00000",
+        from_whatsapp="whatsapp:+14155238886"
+    )
+    assert notifier.is_live_configured() is True
+
+    waiver = PolicyWaiver(
+        waiver_id="wv_fallback_test",
+        user_id="usr_rahul_982",
+        agent_id="agent_shopper_01",
+        cart_total=1800.0,
+        policy_limit=1200.0,
+        delta_amount=600.0,
+        reason="Testing fallback",
+        status="PENDING",
+        created_at=time.time(),
+        expires_at=time.time() + 900
+    )
+
+    # Must NOT raise exception; must fall back to simulated_fallback
+    alert = notifier.dispatch_waiver_alert(waiver, item_title="Noise Cancelling Headphones")
+    assert alert["mode"] == "simulated_fallback"
+    assert "fallback_reason" in alert
+    assert alert["dispatched"] is True
+
+

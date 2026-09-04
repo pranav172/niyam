@@ -110,3 +110,37 @@ def test_token_bucket_rate_limiter():
     limiter.reset_agent(agent)
     assert limiter.check_and_consume(agent)[0] is True
 
+
+def test_mobile_approve_waiver_endpoint():
+    """Verify GET /waivers/{waiver_id}/approve validates HMAC token and approves waiver."""
+    from services.gateway.main import growth_engine, whatsapp_notifier
+
+    waiver = growth_engine.waiver_manager.request_waiver(
+        user_id="usr_rahul_982",
+        agent_id="agent_shopper_01",
+        cart_total=2200.0,
+        policy_limit=1200.0,
+        reason="Testing mobile waiver endpoint"
+    )
+    token = whatsapp_notifier.generate_waiver_token(waiver.waiver_id, waiver.expires_at)
+
+    # Invalid token test
+    bad_res = client.get(f"/waivers/{waiver.waiver_id}/approve?token=corrupted_token_123")
+    assert bad_res.status_code == 403
+    assert "Unauthorized Token" in bad_res.text
+
+    # Non-existent waiver test
+    notfound_res = client.get("/waivers/wv_non_existent/approve?token=any_token")
+    assert notfound_res.status_code == 404
+
+    # Valid approval test
+    good_res = client.get(f"/waivers/{waiver.waiver_id}/approve?token={token}")
+    assert good_res.status_code == 200
+    assert "NIYAM Policy Waiver Applied" in good_res.text
+    assert "₹1,000.00" in good_res.text
+
+    # Verify waiver state changed to APPROVED
+    updated = growth_engine.waiver_manager.get_waiver(waiver.waiver_id)
+    assert updated.status == "APPROVED"
+
+

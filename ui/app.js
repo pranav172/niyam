@@ -126,6 +126,131 @@ const SCENARIOS = {
         merchant_id: "merch_book_store"
       }
     ]
+  },
+  rate_limit_burst: {
+    name: "Runaway Loop Rate Limit",
+    agent_id: "agent_burst_demo",
+    user_id: DEFAULT_USER_ID,
+    idempotency_key: "idemp_" + Math.random().toString(36).substring(2, 10),
+    payment_method: "upi",
+    items: [
+      {
+        id: "prod_toy_puzzle",
+        title: "Fast-Fire Loop Item",
+        price: 200.0,
+        category: "toys",
+        quantity: 1,
+        returnable: true,
+        cod_allowed: true,
+        merchant_id: "merch_verified_toys"
+      }
+    ]
+  },
+  after_hours: {
+    name: "After-Hours Night Breach",
+    agent_id: DEFAULT_AGENT_ID,
+    user_id: DEFAULT_USER_ID,
+    idempotency_key: "idemp_" + Math.random().toString(36).substring(2, 10),
+    payment_method: "upi",
+    request_timestamp: "2026-09-05T02:30:00+05:30",
+    items: [
+      {
+        id: "prod_toy_puzzle",
+        title: "MindCraft Logic 3D Puzzle",
+        price: 650.0,
+        category: "toys",
+        quantity: 1,
+        returnable: true,
+        cod_allowed: true,
+        merchant_id: "merch_verified_toys"
+      }
+    ]
+  },
+  cod_restriction: {
+    name: "COD Below Minimum Threshold",
+    agent_id: DEFAULT_AGENT_ID,
+    user_id: DEFAULT_USER_ID,
+    idempotency_key: "idemp_" + Math.random().toString(36).substring(2, 10),
+    payment_method: "cod",
+    items: [
+      {
+        id: "prod_toy_clay",
+        title: "Non-Toxic Modeling Clay Set",
+        price: 320.0,
+        category: "toys",
+        quantity: 1,
+        returnable: true,
+        cod_allowed: true,
+        merchant_id: "merch_verified_toys"
+      }
+    ]
+  },
+  blacklisted_merchant: {
+    name: "Blacklisted Merchant Filter",
+    agent_id: DEFAULT_AGENT_ID,
+    user_id: DEFAULT_USER_ID,
+    idempotency_key: "idemp_" + Math.random().toString(36).substring(2, 10),
+    payment_method: "upi",
+    items: [
+      {
+        id: "prod_toy_unverified",
+        title: "Discounted Action Figure (Unverified Seller)",
+        price: 550.0,
+        category: "toys",
+        quantity: 1,
+        returnable: true,
+        cod_allowed: true,
+        merchant_id: "merch_fraud_unverified"
+      }
+    ]
+  },
+  monthly_budget_exhausted: {
+    name: "Monthly Spend Cap Exceeded",
+    agent_id: DEFAULT_AGENT_ID,
+    user_id: "usr_near_limit_982",
+    idempotency_key: "idemp_" + Math.random().toString(36).substring(2, 10),
+    payment_method: "upi",
+    items: [
+      {
+        id: "prod_toy_drone",
+        title: "Educational Mini Toy Drone",
+        price: 1100.0,
+        category: "toys",
+        quantity: 1,
+        returnable: true,
+        cod_allowed: true,
+        merchant_id: "merch_verified_toys"
+      }
+    ]
+  },
+  atomic_split: {
+    name: "Atomic Cart Split & Partial Fulfillment",
+    agent_id: DEFAULT_AGENT_ID,
+    user_id: DEFAULT_USER_ID,
+    idempotency_key: "idemp_" + Math.random().toString(36).substring(2, 10),
+    payment_method: "upi",
+    items: [
+      {
+        id: "prod_toy_teddy",
+        title: "Handcrafted Wooden Teddy Bear",
+        price: 450.0,
+        category: "toys",
+        quantity: 1,
+        returnable: true,
+        cod_allowed: true,
+        merchant_id: "merch_verified_toys"
+      },
+      {
+        id: "prod_wireless_earbuds",
+        title: "True Wireless Earbuds",
+        price: 899.0,
+        category: "electronics",
+        quantity: 1,
+        returnable: true,
+        cod_allowed: true,
+        merchant_id: "merch_electronic_hub"
+      }
+    ]
   }
 };
 
@@ -251,9 +376,74 @@ function loadScenario(scenarioKey) {
 function loadAndExecuteScenario(scenarioKey) {
   switchView("commerce");
   loadScenario(scenarioKey);
+
+  if (scenarioKey === "rate_limit_burst") {
+    setTimeout(() => {
+      executeRateLimitBurst();
+    }, 200);
+    return;
+  }
+
   setTimeout(() => {
     executePurchase();
   }, 200);
+}
+
+// Rapid burst of requests to test TokenBucketRateLimiter live
+async function executeRateLimitBurst() {
+  const resultBox = document.getElementById("executionResultBox");
+  const idleBox = document.getElementById("executionIdleBox");
+  if (idleBox) idleBox.style.display = "none";
+  if (resultBox) {
+    resultBox.style.display = "block";
+    resultBox.innerHTML = `
+      <div class="result-card" style="border: 1px solid var(--orange); background: rgba(255, 145, 0, 0.08);">
+        <div class="result-title" style="color: var(--orange);">
+          <span>⚡</span> Firing Runaway Loop (12 High-Velocity Requests)...
+        </div>
+        <div class="result-body" style="font-size: 0.8rem; color: var(--text-secondary);">
+          Simulating rogue agent loop exceeding token-bucket capacity (10 tokens).
+        </div>
+      </div>`;
+  }
+
+  for (let i = 1; i <= 12; i++) {
+    try {
+      const burstPayload = {
+        ...currentScenarioPayload,
+        idempotency_key: "idemp_burst_" + i + "_" + Math.random().toString(36).substring(2, 8)
+      };
+      const res = await fetch("/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(burstPayload)
+      });
+      if (res.status === 429) {
+        const data = await res.json();
+        playChime("breach");
+        if (resultBox) {
+          resultBox.innerHTML = `
+            <div class="result-card result-outage">
+              <div class="result-title" style="color: var(--orange);">
+                <span>⏱️</span> RATE LIMITED: 429 AGENT_RATE_LIMITED (Request #${i} Throttled)
+              </div>
+              <div class="result-body">
+                ${data.detail?.explainability || "Runaway agent loop detected and throttled."}
+              </div>
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.4rem;">
+                🛡️ Merchant Rail Protection Active: Token bucket exhausted at request #${i}. Retry permitted after ${data.detail?.retry_after_seconds?.toFixed(1) || "1.0"}s.
+              </div>
+            </div>`;
+        }
+        break;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  refreshAuditLogs();
+  refreshMetrics();
 }
 
 // Render Items in Shopping Cart
@@ -404,15 +594,26 @@ async function executePurchase() {
 
       if (err.save_the_sale) {
         activeWaiverData = err.save_the_sale;
+        const waMode = err.save_the_sale.whatsapp_mode === "live_twilio" ? "Live Twilio" : "Sandbox Simulator";
+        const phone = err.save_the_sale.recipient_phone || "+919876543210";
+        const mobileUrl = err.save_the_sale.mobile_approve_url || `/growth/waiver/approve/${err.save_the_sale.waiver_id}`;
         waiverSnippet = `
           <div class="save-the-sale-banner">
             <div>
-              <strong class="save-the-sale-title">💡 Save the Sale Opportunity:</strong>
-              <div style="font-size: 0.76rem; color: var(--text-secondary);">Exceeds cap by ₹${err.save_the_sale.delta_amount.toFixed(2)}. 1-Tap Waiver ready.</div>
+              <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom: 0.2rem;">
+                <strong class="save-the-sale-title">💡 Save the Sale Opportunity:</strong>
+                <span class="badge ${err.save_the_sale.whatsapp_mode === 'live_twilio' ? 'badge-mint' : 'badge-violet'}" style="font-size: 0.65rem;">${waMode}</span>
+              </div>
+              <div style="font-size: 0.76rem; color: var(--text-secondary);">Exceeds cap by ₹${err.save_the_sale.delta_amount.toFixed(2)}. Alert routed to ${phone}.</div>
             </div>
-            <button class="btn btn-violet" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;" onclick="openWaiverModal('${err.save_the_sale.waiver_id}', '${currentScenarioPayload.items[0]?.title || "Item"}', ${err.actual_value}, ${err.save_the_sale.delta_amount})">
-              📲 Open WhatsApp 1-Tap ↗
-            </button>
+            <div style="display:flex; gap:0.4rem; flex-wrap: wrap;">
+              <a href="${mobileUrl}" target="_blank" class="btn btn-mint" style="font-size: 0.75rem; padding: 0.4rem 0.75rem; text-decoration: none;">
+                📲 1-Tap Mobile Auth ↗
+              </a>
+              <button class="btn btn-violet" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;" onclick="openWaiverModal('${err.save_the_sale.waiver_id}', '${currentScenarioPayload.items[0]?.title || "Item"}', ${err.actual_value}, ${err.save_the_sale.delta_amount}, '${mobileUrl}', '${phone}', '${err.save_the_sale.whatsapp_mode}')">
+                💬 Phone Simulator
+              </button>
+            </div>
           </div>
         `;
 
@@ -421,7 +622,10 @@ async function executePurchase() {
             err.save_the_sale.waiver_id,
             currentScenarioPayload.items[0]?.title || "Robotics Building Blocks Set",
             err.actual_value,
-            err.save_the_sale.delta_amount
+            err.save_the_sale.delta_amount,
+            mobileUrl,
+            phone,
+            err.save_the_sale.whatsapp_mode
           );
         }, 300);
       }
@@ -563,17 +767,28 @@ function retryLastPurchase() {
 }
 
 // WhatsApp 1-Tap Modal Control
-function openWaiverModal(waiverId, itemTitle, cartTotal, delta) {
-  activeWaiverData = { waiverId, itemTitle, cartTotal, delta };
+function openWaiverModal(waiverId, itemTitle, cartTotal, delta, mobileUrl, phone, mode) {
+  activeWaiverData = { waiverId, itemTitle, cartTotal, delta, mobileUrl, phone, mode };
   
   const modal = document.getElementById("saveTheSaleModal");
   const titleEl = document.getElementById("waItemTitle");
   const totalEl = document.getElementById("waCartTotal");
   const approvedBubble = document.getElementById("waBubbleApproved");
   const approveBtn = document.getElementById("btnWaApprove");
+  const modeBadge = document.getElementById("waModeBadge");
+  const linkBtn = document.getElementById("waMobileLinkBtn");
+  const phoneEl = document.getElementById("waRecipientPhone");
 
   if (titleEl) titleEl.innerText = itemTitle;
   if (totalEl) totalEl.innerText = `₹${cartTotal.toFixed(2)}`;
+  if (phoneEl && phone) phoneEl.innerText = phone;
+  if (modeBadge && mode) {
+    modeBadge.innerText = mode === "live_twilio" ? "Live Twilio WhatsApp" : "Sandbox Simulator";
+    modeBadge.className = mode === "live_twilio" ? "badge badge-mint" : "badge badge-volt";
+  }
+  if (linkBtn && mobileUrl) {
+    linkBtn.href = mobileUrl;
+  }
   if (approvedBubble) approvedBubble.style.display = "none";
   if (approveBtn) {
     approveBtn.disabled = false;
