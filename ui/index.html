@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NIYAM — Policy Enforcement Gateway | Razorpay AI Buildathon</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand-section">
+      <div class="logo-badge">NIYAM</div>
+      <div class="brand-title">
+        <h1>NIYAM Enforcement Gateway <span class="track-tag">Track 01: Agentic Commerce</span></h1>
+        <p class="brand-subtitle">Unified Agent Protocol (UAP) Policy Engine for Autonomous AI Buyers</p>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <!-- Chaos Switch for Failure Mode 2 -->
+      <div class="chaos-control">
+        <span class="chaos-label">Razorpay Outage Chaos:</span>
+        <label class="chaos-switch">
+          <input type="checkbox" id="chaosToggle" onchange="toggleChaos(this.checked)">
+          <span class="slider"></span>
+        </label>
+        <span id="chaosStatusBadge" class="chaos-status status-normal">CIRCUIT CLOSED</span>
+      </div>
+
+      <button class="btn btn-secondary" onclick="refreshAll()" title="Refresh Gateway State">
+        🔄 Refresh
+      </button>
+    </div>
+  </header>
+
+  <!-- Metrics Bar -->
+  <div class="metrics-strip">
+    <div class="metric-item">
+      <span class="metric-value" id="mTotalEvals">0</span>
+      <span class="metric-label">Evaluations</span>
+    </div>
+    <div class="metric-item">
+      <span class="metric-value" id="mApproved" style="color: var(--success);">0</span>
+      <span class="metric-label">Approved</span>
+    </div>
+    <div class="metric-item">
+      <span class="metric-value" id="mDenied" style="color: var(--danger);">0</span>
+      <span class="metric-label">Denied</span>
+    </div>
+    <div class="metric-item">
+      <span class="metric-value" id="mDuplicates" style="color: var(--info);">0</span>
+      <span class="metric-label">Duplicates Suppressed</span>
+    </div>
+    <div class="metric-item">
+      <span class="metric-value" id="mCircuitBreaker" style="color: var(--warning);">0</span>
+      <span class="metric-label">Circuit Breaker Intercepts</span>
+    </div>
+    <div class="metric-item">
+      <span class="metric-value" id="mCompliance">100%</span>
+      <span class="metric-label">Audit Completeness</span>
+    </div>
+  </div>
+
+  <!-- Main 3-Column Layout -->
+  <main class="main-container">
+
+    <!-- Column 1: Policy Studio & UAP Mandates -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>📜</span> Policy Studio (Hinglish / English)
+        </div>
+        <span id="activePolicyVersionBadge" class="badge badge-policy">v1</span>
+      </div>
+
+      <div class="panel-body">
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.4rem;">
+            Natural Language Spending Mandate:
+          </label>
+          <textarea id="policyInput" rows="4" placeholder="Enter policy in Hinglish or English...">Baccho ke toys ke liye max 1200 per order, electronics bilkul nahi, monthly 8000 se upar mat hone dena. Sirf returnable items lena.</textarea>
+        </div>
+
+        <button class="btn" style="width: 100%;" onclick="compilePolicy()">
+          ⚡ Compile & Activate (vN+1)
+        </button>
+
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.4rem;">
+            Active JSON Schema Mandate (Immutable):
+          </label>
+          <pre class="json-viewer" id="policyJsonViewer">Loading policy...</pre>
+        </div>
+
+        <div style="background: #0D1322; border: 1px solid #1E293B; border-radius: 8px; padding: 0.8rem; font-size: 0.75rem; color: #94A3B8;">
+          <strong style="color: #38BDF8;">💡 How this works:</strong>
+          The LLM compiles natural language into a strictly validated JSON Schema once at onboarding. At transaction time, evaluation is <strong>100% deterministic code</strong> with zero LLM in the financial path.
+        </div>
+      </div>
+    </section>
+
+    <!-- Column 2: Autonomous Agent Commerce Simulator -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>🤖</span> Autonomous Agent Shopper
+        </div>
+        <span class="badge badge-approved" id="agentAuthBadge">agent_shopper_01 (Verified)</span>
+      </div>
+
+      <div class="panel-body">
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">
+            Select Test Scenario (Click to Load):
+          </label>
+          <div class="scenarios-grid">
+            
+            <div class="scenario-card" onclick="loadScenario('happy_path')">
+              <div class="scenario-info">
+                <h4>🟢 Compliant Purchase</h4>
+                <p>Wooden Teddy Bear (₹450) • Complies with ₹1,200 limit</p>
+              </div>
+              <span class="badge badge-approved">Pass</span>
+            </div>
+
+            <div class="scenario-card" onclick="loadScenario('overspend')">
+              <div class="scenario-info">
+                <h4>🔴 Failure Mode 1: Overspend Breach</h4>
+                <p>Flagship 5G Smartphone (₹79,999) • Breaches ₹1,200 limit</p>
+              </div>
+              <span class="badge badge-denied">Overspend</span>
+            </div>
+
+            <div class="scenario-card" onclick="loadScenario('forbidden_cat')">
+              <div class="scenario-info">
+                <h4>🔴 Failure Mode 1: Forbidden Category</h4>
+                <p>Wireless Earbuds (₹899) • Blocked by "electronics: 0"</p>
+              </div>
+              <span class="badge badge-denied">Forbidden</span>
+            </div>
+
+            <div class="scenario-card" onclick="loadScenario('non_returnable')">
+              <div class="scenario-info">
+                <h4>🔴 Failure Mode 1: Non-Returnable Item</h4>
+                <p>Custom Engraved Doll (₹600) • Blocked by "returnable_only"</p>
+              </div>
+              <span class="badge badge-denied">Policy</span>
+            </div>
+
+            <div class="scenario-card" onclick="loadScenario('idempotency')">
+              <div class="scenario-info">
+                <h4>🔁 Idempotency Test (Network Retry)</h4>
+                <p>Re-sends same idempotency key • Prevents double-charge</p>
+              </div>
+              <span class="badge badge-duplicate">Dedupe</span>
+            </div>
+
+            <div class="scenario-card" onclick="loadScenario('chaos')">
+              <div class="scenario-info">
+                <h4>⚠️ Failure Mode 2: Razorpay Outage</h4>
+                <p>Trips circuit breaker • Fails closed with 503</p>
+              </div>
+              <span class="badge badge-outage">Circuit</span>
+            </div>
+
+            <div class="scenario-card" onclick="loadScenario('marginal_overspend')">
+              <div class="scenario-info">
+                <h4>💡 "Save the Sale" 1-Tap Waiver</h4>
+                <p>Robotics Kit (₹1,350 vs ₹1,200 cap) • Recovers conversion via 1-tap waiver</p>
+              </div>
+              <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: #38BDF8; border: 1px solid #38BDF8;">Growth</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Headroom & Merchant Growth Upsell Panel -->
+        <div id="growthUpsellPanel" style="background: #0E1726; border: 1px solid #1E293B; border-radius: 8px; padding: 0.8rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.78rem; font-weight: 700; color: #38BDF8;">📈 Authorized Headroom (Merchant Growth):</span>
+            <span id="headroomAmountText" style="font-size: 0.85rem; font-weight: 800; color: #10B981;">₹750.00 Available</span>
+          </div>
+          <p style="font-size: 0.75rem; color: #94A3B8; margin-bottom: 0.5rem;">
+            Add high-margin complementary items without exceeding policy cap:
+          </p>
+          <div id="upsellButtonsContainer" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+        </div>
+
+        <!-- Current Shopping Cart / Request Payload -->
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.4rem;">
+            Purchase Request Payload (POST /purchase):
+          </label>
+          <pre class="json-viewer" id="cartPayloadViewer" style="max-height: 140px;"></pre>
+        </div>
+
+        <div style="display: flex; gap: 0.8rem;">
+          <button class="btn" style="flex: 1;" onclick="executePurchase()" id="btnExecute">
+            🚀 Submit Purchase to Gateway
+          </button>
+          <button class="btn btn-secondary" onclick="retryLastPurchase()" title="Re-submit with identical idempotency key">
+            🔁 Retry Same Key
+          </button>
+        </div>
+
+        <!-- Execution Result Banner -->
+        <div id="executionResultBox" style="display: none;"></div>
+      </div>
+    </section>
+
+    <!-- Column 3: Live Audit Stream & Failure Escalation -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>📋</span> Live Immutable Audit Ledger
+        </div>
+        <span class="badge badge-policy">action_logs</span>
+      </div>
+
+      <div class="panel-body">
+        
+        <!-- Live Escalation Notification Banner (Shown on Denial) -->
+        <div id="escalationNotification" class="escalation-banner" style="display: none;">
+          <div class="escalation-icon">🚨</div>
+          <div class="escalation-content">
+            <h5>Simulated Escalation Dispatched</h5>
+            <p id="escalationText">Automated Voice Callback / SMS alert dispatched to account principal.</p>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">
+            Real-Time Decision Stream:
+          </label>
+          <div class="audit-list" id="auditListContainer">
+            <div style="color: var(--text-muted); font-size: 0.8rem;">Listening for transaction events...</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
