@@ -123,7 +123,7 @@ def _seed_demo_state():
     p1.constraints.blocked_merchants = ["merch_fraud_unverified", "merch_blacklisted_electronics"]
     p1.constraints.cod_allowed_above = 500.0
     p1.time_window = TimeWindow(
-        active_hours="06:00-23:00",
+        active_hours="00:00-23:59",
         timezone="Asia/Kolkata",
         allowed_days=["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     )
