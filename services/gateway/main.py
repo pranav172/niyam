@@ -129,12 +129,15 @@ _seed_demo_state()
 # Endpoints
 
 @app.get("/healthz")
+@app.get("/readyz")
+@app.get("/health")
 def healthcheck():
     return {
         "status": "healthy",
         "gateway": "NIYAM v1.0",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "circuit_breaker": razorpay_client.circuit_breaker.get_status()
+        "circuit_breaker": razorpay_client.circuit_breaker.get_status(),
+        "environment": os.getenv("ENVIRONMENT", "production")
     }
 
 

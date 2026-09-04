@@ -290,7 +290,56 @@ All 27 test cases execute in < 0.6 seconds with 100% pass rate.
 
 ---
 
-## 8. Buildathon Track 01 Alignment Checklist
+## 8. Public Deployment & Cloud Readiness (Deploy in 60 Seconds)
+
+NIYAM is production-ready and can be deployed publicly for hackathon demonstration in under a minute using any of the following methods:
+
+### Option A: 60-Second Instant Public URL via ngrok (Recommended for Live Demo)
+Run the local server and expose an encrypted public tunnel for judges to test from their own devices:
+```bash
+# Terminal 1: Run NIYAM Gateway
+python run.py
+
+# Terminal 2: Expose via ngrok
+ngrok http 8000
+```
+Copy the generated `https://xxxx.ngrok-free.app` URL and open it on your phone or share it with judges. Set `PUBLIC_BASE_URL=https://xxxx.ngrok-free.app` in `.env` to enable live mobile WhatsApp 1-tap approval callbacks!
+
+---
+
+### Option B: 1-Click Free Cloud Deploy via Render.com
+NIYAM includes a pre-configured [render.yaml](render.yaml) blueprint:
+1. Fork or push this repository to GitHub: `https://github.com/pranav172/niyam`.
+2. Go to **[Render.com Dashboard](https://dashboard.render.com)** -> Click **New +** -> **Blueprint**.
+3. Select this repository. Render automatically reads `render.yaml`, installs dependencies, and provisions a public HTTPS endpoint (`https://niyam-gateway.onrender.com`) with automated health checks at `/healthz`.
+
+---
+
+### Option C: Production Docker Container
+Build and run the hardened container locally or on any cloud VM (AWS EC2, GCP Cloud Run, DigitalOcean):
+```bash
+# Build the production image
+docker build -t niyam-gateway .
+
+# Run with container healthchecks active
+docker run -d -p 8000:8000 --name niyam niyam-gateway
+
+# Verify health status
+curl http://localhost:8000/healthz
+```
+
+---
+
+### Option D: Railway / Fly.io / Heroku
+Deploy using the included [Procfile](Procfile):
+```bash
+# Railway automatically detects the Procfile and starts uvicorn on $PORT
+railway up
+```
+
+---
+
+## 9. Buildathon Track 01 Alignment Checklist
 
 - [x] **Explainable:** Every decision outputs `{rule_fired, threshold, actual_value, reason_code, explainability}`.
 - [x] **Bounded:** Evaluates per-transaction limits, category caps, monthly budgets, returnability, and active hours.

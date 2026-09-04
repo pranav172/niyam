@@ -198,8 +198,9 @@ if __name__ == "__main__":
     if "--verify" in sys.argv:
         run_verification()
     else:
+        port = int(os.getenv("PORT", 8000))
         print("=" * 70)
-        print(" ⚡ NIYAM GATEWAY STARTING ON http://localhost:8000")
-        print(" Open http://localhost:8000 in your browser to view Mission Control")
+        print(f" ⚡ NIYAM GATEWAY STARTING ON http://0.0.0.0:{port}")
+        print(f" Open http://localhost:{port} in your browser to view Mission Control")
         print("=" * 70)
-        uvicorn.run("services.gateway.main:app", host="0.0.0.0", port=8000, reload=True)
+        uvicorn.run("services.gateway.main:app", host="0.0.0.0", port=port, reload=True)
