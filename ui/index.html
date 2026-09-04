@@ -30,11 +30,17 @@
         <span id="chaosStatusBadge" class="chaos-indicator ind-closed">CIRCUIT CLOSED</span>
       </div>
 
+      <!-- Theme Switcher Button (Dark / Light White Theme) -->
+      <button class="btn btn-secondary" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle White / Dark Theme">
+        ☀️ Light Mode
+      </button>
+
       <button class="btn btn-secondary" onclick="refreshAll()" title="Refresh Gateway State">
         🔄 Refresh
       </button>
     </div>
   </header>
+
 
   <!-- Navigation Tab Bar — Spacious, Uncongested Architecture -->
   <nav class="tab-navigation">
@@ -392,8 +398,12 @@
           <button class="btn btn-mint" style="font-size: 0.8rem; padding: 0.45rem 1rem;" onclick="exportAuditCsv()" id="btnExportCsv">
             📥 Export Compliance CSV
           </button>
+          <button class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 1rem;" onclick="exportAuditPdf()" id="btnExportPdf">
+            📄 Export Audit PDF / Print
+          </button>
         </div>
       </div>
+
 
       <div class="single-column-layout">
         <div class="card">

@@ -72,3 +72,25 @@ def test_waiver_lifecycle():
     # Check
     retrieved = mgr.get_waiver(waiver.waiver_id)
     assert retrieved.status == "APPROVED"
+
+
+def test_partial_fulfillment_split(test_policy):
+    """Multi-item cart containing compliant toy (₹450) and forbidden earphone (₹899).
+    Should isolate compliant item and offer partial fulfillment.
+    """
+    from services.compiler.schema import PurchaseItem
+    growth = GrowthEngine()
+    items = [
+        PurchaseItem(id="item_toy", title="Teddy Bear", price=450.0, category="toys", returnable=True),
+        PurchaseItem(id="item_phone", title="Earbuds", price=899.0, category="electronics", returnable=True)
+    ]
+    option = growth.analyze_partial_fulfillment(test_policy, items)
+    assert option is not None
+    assert option.can_fulfill_partial is True
+    assert len(option.compliant_items) == 1
+    assert option.compliant_items[0].id == "item_toy"
+    assert len(option.breaching_items) == 1
+    assert option.breaching_items[0]["id"] == "item_phone"
+    assert option.compliant_subtotal == 450.0
+    assert option.gated_amount == 899.0
+

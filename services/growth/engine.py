@@ -49,6 +49,15 @@ class PolicyWaiver(BaseModel):
     approved_at: Optional[float] = None
 
 
+class PartialFulfillmentOption(BaseModel):
+    can_fulfill_partial: bool
+    compliant_items: List[PurchaseItem]
+    breaching_items: List[Dict[str, Any]]
+    compliant_subtotal: float
+    gated_amount: float
+    message: str
+
+
 # High-margin add-on catalog designed to boost merchant revenue
 UPSELL_CATALOG: List[Dict[str, Any]] = [
     {
@@ -215,3 +224,66 @@ class GrowthEngine:
         # Sort recommendations by margin and price to maximize merchant revenue
         recommendations.sort(key=lambda x: (x.merchant_margin_tier == "HIGH", x.price), reverse=True)
         return recommendations
+
+    def analyze_partial_fulfillment(
+        self,
+        policy: SpendingPolicy,
+        items: List[PurchaseItem]
+    ) -> Optional[PartialFulfillmentOption]:
+        """Evaluates multi-item carts to isolate compliant items from breaching items.
+        Allows merchant to salvage and fulfill compliant subsets rather than dropping the entire order.
+        """
+        if len(items) <= 1:
+            return None
+
+        compliant: List[PurchaseItem] = []
+        breaching: List[Dict[str, Any]] = []
+
+        for item in items:
+            cat = item.category.lower()
+            item_price = item.price * item.quantity
+
+            # Check individual item rules
+            is_breach = False
+            breach_reason = ""
+
+            if cat in policy.limits.category_caps and policy.limits.category_caps[cat] == 0:
+                is_breach = True
+                breach_reason = f"Category '{cat}' is prohibited (cap ₹0)"
+            elif policy.constraints.allowed_categories and cat not in [c.lower() for c in policy.constraints.allowed_categories]:
+                is_breach = True
+                breach_reason = f"Category '{cat}' is not in permitted whitelist"
+            elif policy.constraints.returnable_only and not item.returnable:
+                is_breach = True
+                breach_reason = "Non-returnable item prohibited by policy"
+            elif item_price > policy.limits.max_per_transaction:
+                is_breach = True
+                breach_reason = f"Item amount ₹{item_price:.2f} exceeds per-transaction cap ₹{policy.limits.max_per_transaction:.2f}"
+
+            if is_breach:
+                breaching.append({
+                    "id": item.id,
+                    "title": item.title,
+                    "amount": item_price,
+                    "reason": breach_reason
+                })
+            else:
+                compliant.append(item)
+
+        # If we have both compliant and breaching items, and compliant items sum <= per_tx_limit
+        if compliant and breaching:
+            compliant_subtotal = sum(i.price * i.quantity for i in compliant)
+            gated_amount = sum(b["amount"] for b in breaching)
+
+            if compliant_subtotal <= policy.limits.max_per_transaction:
+                return PartialFulfillmentOption(
+                    can_fulfill_partial=True,
+                    compliant_items=compliant,
+                    breaching_items=breaching,
+                    compliant_subtotal=compliant_subtotal,
+                    gated_amount=gated_amount,
+                    message=f"Atomic Cart Split: {len(compliant)} items (₹{compliant_subtotal:.2f}) comply with policy; {len(breaching)} items (₹{gated_amount:.2f}) gated."
+                )
+
+        return None
+

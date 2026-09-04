@@ -29,6 +29,7 @@ from services.evaluator.engine import evaluate_purchase
 from services.gateway.idempotency import IdempotencyManager
 from services.gateway.audit_ledger import AuditLedger
 from services.gateway.catalog import get_agent_catalog
+from services.gateway.rate_limiter import TokenBucketRateLimiter
 from services.mcp_client.razorpay_client import RazorpayMCPClient
 from services.mcp_client.circuit_breaker import CircuitBreakerOpenException
 from services.growth.engine import GrowthEngine
@@ -55,6 +56,8 @@ idempotency_mgr = IdempotencyManager(ttl_seconds=86400)
 audit_ledger = AuditLedger(data_dir="data")
 razorpay_client = RazorpayMCPClient()
 growth_engine = GrowthEngine()
+rate_limiter = TokenBucketRateLimiter(capacity=50, refill_rate_per_sec=10.0)
+
 
 # In-memory stores (persisted to disk via audit_ledger snapshots)
 user_policies: Dict[str, List[SpendingPolicy]] = {}
@@ -253,8 +256,32 @@ def execute_purchase(request: PurchaseRequest, x_agent_key: Optional[str] = Head
             "data": cached_response
         }
 
-    # 3. Retrieve User Policy Snapshot
+    # 3. Rate Limiting Check (Defends merchant rails against runaway AI agent loops)
+    rate_ok, retry_after = rate_limiter.check_and_consume(request.agent_id)
+    if not rate_ok:
+        audit_ledger.record_entry(
+            agent_id=request.agent_id,
+            user_id=request.user_id,
+            action="RATE_LIMITED",
+            amount=request.get_calculated_total(),
+            policy_snapshot=None,
+            decision={"rate_limited": True, "retry_after": retry_after},
+            explainability=f"Rate limit exceeded for agent '{request.agent_id}'. Throttled to prevent runaway loops.",
+            is_failure_handled=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "status": "AGENT_RATE_LIMITED",
+                "explainability": f"Agent '{request.agent_id}' exceeded permitted request velocity. Retry after {retry_after:.1f}s.",
+                "retry_after_seconds": retry_after
+            },
+            headers={"Retry-After": str(int(retry_after) + 1)}
+        )
+
+    # 4. Retrieve User Policy Snapshot
     user_policy_list = user_policies.get(request.user_id)
+
     if not user_policy_list:
         raise HTTPException(
             status_code=400,
@@ -336,6 +363,10 @@ def execute_purchase(request: PurchaseRequest, x_agent_key: Optional[str] = Head
                         "expires_in_seconds": int(pending_waiver.expires_at - time.time()),
                         "one_tap_approve_url": f"/growth/waiver/approve/{pending_waiver.waiver_id}"
                     },
+                    "partial_fulfillment_option": (
+                        growth_engine.analyze_partial_fulfillment(active_policy, request.items).model_dump()
+                        if growth_engine.analyze_partial_fulfillment(active_policy, request.items) else None
+                    ),
                     "escalation": {
                         "voice_callback_dispatched": True,
                         "recipient": request.user_id,
@@ -343,6 +374,7 @@ def execute_purchase(request: PurchaseRequest, x_agent_key: Optional[str] = Head
                     }
                 }
             )
+
 
     # 6. Policy Passed -> Invoke Razorpay MCP with Circuit Breaker (Failure Mode 2 Handling)
     description = f"Autonomous purchase of {len(request.items)} item(s) by agent {request.agent_id}"

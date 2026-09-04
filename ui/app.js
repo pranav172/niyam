@@ -9,6 +9,7 @@ let lastIdempotencyKey = null;
 let activeAuditFilter = "ALL";
 let rawAuditLogs = [];
 let activeWaiverData = null;
+let lastPartialOption = null;
 
 // Pre-defined scenarios
 const SCENARIOS = {
@@ -130,6 +131,11 @@ const SCENARIOS = {
 
 // Application Initialization
 document.addEventListener("DOMContentLoaded", () => {
+  // Theme initialization
+  const savedTheme = localStorage.getItem("niyam_theme") || "dark";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  updateThemeButton(savedTheme);
+
   loadActivePolicy();
   loadScenario("happy_path");
   refreshAuditLogs();
@@ -142,6 +148,53 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshMetrics();
   }, 4000);
 });
+
+// Theme Switching Logic
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+  const newTheme = currentTheme === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", newTheme);
+  localStorage.setItem("niyam_theme", newTheme);
+  updateThemeButton(newTheme);
+}
+
+function updateThemeButton(theme) {
+  const btn = document.getElementById("themeToggleBtn");
+  if (btn) {
+    btn.innerHTML = theme === "light" ? "🌙 Dark Mode" : "☀️ Light Mode";
+  }
+}
+
+// Web Audio Synthesizer for Immediate Auditory Feedback
+function playChime(type) {
+  try {
+    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtxClass) return;
+    const audioCtx = new AudioCtxClass();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    if (type === "approved" || type === "settled") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+      osc.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.18); // G5
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.25);
+    } else if (type === "breach") {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(349.23, audioCtx.currentTime); // F4
+      osc.frequency.exponentialRampToValueAtTime(261.63, audioCtx.currentTime + 0.2); // C4
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.25);
+    }
+  } catch (e) {}
+}
 
 // View Navigation Logic — Seamless Tab Switching
 function switchView(viewName) {
@@ -306,12 +359,13 @@ async function executePurchase() {
 
     if (res.status === 200) {
       if (data.status === "DUPLICATE_SUPPRESSED") {
+        playChime("approved");
         resultBox.innerHTML = `
           <div class="result-card result-duplicate">
             <div class="result-title" style="color: #C4B5FD;">
               <span>🔁</span> Idempotency Gate (DUPLICATE_SUPPRESSED)
             </div>
-            <div class="result-body" style="color: #E9D5FF;">
+            <div class="result-body" style="color: inherit;">
               ${data.message}
             </div>
             <div style="font-size: 0.72rem; color: #D8B4FE; font-family: monospace;">
@@ -319,19 +373,23 @@ async function executePurchase() {
             </div>
           </div>`;
       } else {
+        playChime("approved");
         resultBox.innerHTML = `
           <div class="result-card result-approved">
             <div class="result-title" style="color: var(--mint);">
               <span>✅</span> Transaction APPROVED by Deterministic Gate!
             </div>
-            <div class="result-body" style="color: #D1FAE5;">
+            <div class="result-body" style="color: inherit;">
               ${data.explainability}
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem;">
-              <a href="${data.payment_link}" target="_blank" class="btn btn-mint" style="font-size: 0.78rem; padding: 0.4rem 0.8rem; text-decoration: none;">
+            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.5rem; align-items: center;">
+              <a href="${data.payment_link}" target="_blank" class="btn btn-mint" style="font-size: 0.78rem; padding: 0.45rem 0.85rem; text-decoration: none;">
                 💳 Open Razorpay Test Link (${data.razorpay_ref}) ↗
               </a>
-              <span style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">
+              <button class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.45rem 0.85rem;" onclick="simulateRazorpayWebhook('${data.razorpay_ref}', ${data.amount})">
+                ⚡ Dispatch Webhook (Simulate Payment Settled)
+              </button>
+              <span style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace; margin-left: auto;">
                 ${data.audit_log_id}
               </span>
             </div>
@@ -339,16 +397,18 @@ async function executePurchase() {
       }
     } else if (res.status === 403) {
       // Failure Mode 1: Policy Gate Denial
+      playChime("breach");
       const err = data.detail || {};
       let waiverSnippet = "";
+      let partialSnippet = "";
 
       if (err.save_the_sale) {
         activeWaiverData = err.save_the_sale;
         waiverSnippet = `
-          <div style="background: rgba(176, 38, 255, 0.14); border: 1px solid var(--violet-border); border-radius: 8px; padding: 0.85rem; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div style="background: rgba(176, 38, 255, 0.14); border: 1px solid var(--violet-border); border-radius: 8px; padding: 0.85rem; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;">
             <div>
               <strong style="color: #E2B6FF; font-size: 0.82rem;">💡 Save the Sale Opportunity:</strong>
-              <div style="font-size: 0.76rem; color: #E9D5FF;">Exceeds cap by ₹${err.save_the_sale.delta_amount.toFixed(2)}. 1-Tap Waiver ready.</div>
+              <div style="font-size: 0.76rem; color: var(--text-secondary);">Exceeds cap by ₹${err.save_the_sale.delta_amount.toFixed(2)}. 1-Tap Waiver ready.</div>
             </div>
             <button class="btn btn-violet" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;" onclick="openWaiverModal('${err.save_the_sale.waiver_id}', '${currentScenarioPayload.items[0]?.title || "Item"}', ${err.actual_value}, ${err.save_the_sale.delta_amount})">
               📲 Open WhatsApp 1-Tap ↗
@@ -356,7 +416,6 @@ async function executePurchase() {
           </div>
         `;
 
-        // Automatically trigger the WhatsApp modal overlay!
         setTimeout(() => {
           openWaiverModal(
             err.save_the_sale.waiver_id,
@@ -367,28 +426,61 @@ async function executePurchase() {
         }, 300);
       }
 
+      if (err.partial_fulfillment_option && err.partial_fulfillment_option.can_fulfill_partial) {
+        lastPartialOption = err.partial_fulfillment_option;
+        partialSnippet = `
+          <div style="background: rgba(0, 245, 155, 0.1); border: 1px solid var(--mint-border); border-radius: 8px; padding: 0.85rem; margin-top: 0.5rem;">
+            <strong style="color: var(--mint); font-size: 0.82rem;">🛒 Atomic Cart Split & Partial Fulfillment Available:</strong>
+            <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 0.2rem;">
+              ${err.partial_fulfillment_option.message}
+            </div>
+            <button class="btn btn-mint" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; margin-top: 0.5rem;" onclick="fulfillCompliantSubCart()">
+              ⚡ Fulfill Compliant Items Only (₹${err.partial_fulfillment_option.compliant_subtotal.toFixed(2)})
+            </button>
+          </div>
+        `;
+      }
+
       resultBox.innerHTML = `
         <div class="result-card result-denied">
           <div class="result-title" style="color: var(--rose);">
             <span>🚫</span> BLOCKED by NIYAM Gate: ${err.reason_code}
           </div>
-          <div class="result-body" style="color: #FFE4E6;">
+          <div class="result-body" style="color: inherit;">
             ${err.explainability}
           </div>
           <div style="font-size: 0.73rem; color: var(--text-muted); font-family: monospace;">
             Rule Fired: ${err.rule_fired} (Threshold: ₹${err.threshold} | Attempted: ₹${err.actual_value})
           </div>
           ${waiverSnippet}
+          ${partialSnippet}
+        </div>`;
+    } else if (res.status === 429) {
+      // Rate Limiting Intercept
+      playChime("breach");
+      const err = data.detail || {};
+      resultBox.innerHTML = `
+        <div class="result-card result-outage">
+          <div class="result-title" style="color: var(--orange);">
+            <span>⏱️</span> RATE LIMITED: ${err.status}
+          </div>
+          <div class="result-body">
+            ${err.explainability}
+          </div>
+          <div style="font-size: 0.74rem; color: var(--text-muted);">
+            Merchant protection active: Throttled runaway agent loop.
+          </div>
         </div>`;
     } else if (res.status === 503) {
       // Failure Mode 2: Circuit Breaker Outage
+      playChime("breach");
       const err = data.detail || {};
       resultBox.innerHTML = `
         <div class="result-card result-outage">
           <div class="result-title" style="color: var(--orange);">
             <span>⚠️</span> CIRCUIT BREAKER FAIL-CLOSED: ${err.reason_code}
           </div>
-          <div class="result-body" style="color: #FEF3C7;">
+          <div class="result-body" style="color: inherit;">
             ${err.explainability}
           </div>
           <div style="font-size: 0.74rem; color: var(--orange);">
@@ -407,6 +499,54 @@ async function executePurchase() {
     }
     refreshAuditLogs();
     refreshMetrics();
+  }
+}
+
+// Partial Fulfillment: Trim out breaching items and execute compliant subset
+function fulfillCompliantSubCart() {
+  if (!lastPartialOption || !lastPartialOption.compliant_items) return;
+  currentScenarioPayload.items = JSON.parse(JSON.stringify(lastPartialOption.compliant_items));
+  currentScenarioPayload.idempotency_key = "idemp_" + Math.random().toString(36).substring(2, 10);
+  renderCartItems();
+  updatePayloadViewer();
+  executePurchase();
+}
+
+// Webhook Simulation: Triggers HMAC-signed Razorpay webhook
+async function simulateRazorpayWebhook(paymentRef, amount) {
+  try {
+    const payload = {
+      event: "payment.captured",
+      payload: {
+        payment: {
+          entity: {
+            id: paymentRef || "pay_mock_" + Math.random().toString(36).substring(2, 8),
+            amount: Math.round((amount || 450) * 100),
+            currency: "INR",
+            status: "captured",
+            notes: {
+              agent_id: DEFAULT_AGENT_ID,
+              user_id: DEFAULT_USER_ID
+            }
+          }
+        }
+      }
+    };
+    const res = await fetch("/webhooks/razorpay", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      playChime("settled");
+      refreshAuditLogs();
+      refreshMetrics();
+      alert(`Razorpay Webhook Verified: Event 'payment.captured' settled for ${paymentRef}. Transaction marked SETTLED in audit ledger!`);
+    } else {
+      alert("Webhook dispatch error");
+    }
+  } catch (err) {
+    alert("Webhook dispatch error: " + err.message);
   }
 }
 
@@ -462,10 +602,10 @@ async function approveWaiverFromModal() {
     const res = await fetch(`/growth/waiver/approve/${activeWaiverData.waiverId}`, { method: "POST" });
     if (res.ok) {
       if (approvedBubble) approvedBubble.style.display = "block";
+      playChime("approved");
 
       setTimeout(async () => {
         closeWaiverModal();
-        // Inject waiver_id into active payload and resubmit!
         currentScenarioPayload.waiver_id = activeWaiverData.waiverId;
         updatePayloadViewer();
         await executePurchase();
@@ -614,6 +754,7 @@ async function compilePolicy() {
 
       refreshAuditLogs();
       refreshMetrics();
+      playChime("approved");
       alert(`Policy ${data.policy.policy_version} compiled and activated successfully!`);
     } else {
       alert("Policy Compilation Error: " + (data.detail || "Validation failed"));
@@ -677,6 +818,7 @@ function renderFilteredAuditLogs() {
     else if (log.action === "DUPLICATE_SUPPRESSED") badgeClass = "badge-violet";
     else if (log.action === "RAZORPAY_UNAVAILABLE") badgeClass = "badge-orange";
     else if (log.action === "SETTLED") badgeClass = "badge-mint";
+    else if (log.action === "RATE_LIMITED") badgeClass = "badge-orange";
 
     const timeStr = new Date(log.ts).toLocaleTimeString();
     const amountStr = log.amount > 0 ? `₹${log.amount.toLocaleString("en-IN")}` : "";
@@ -703,11 +845,11 @@ function renderFilteredAuditLogs() {
         <div class="audit-meta-row">
           <div style="display: flex; align-items: center; gap: 0.6rem;">
             <span class="badge ${badgeClass}">${actionLabel}</span>
-            ${amountStr ? `<strong style="font-size: 0.85rem; color: #FFF;">${amountStr}</strong>` : ""}
+            ${amountStr ? `<strong style="font-size: 0.85rem; color: var(--text-primary);">${amountStr}</strong>` : ""}
           </div>
           <span style="font-size: 0.74rem; color: var(--text-muted);">${timeStr}</span>
         </div>
-        <div style="font-size: 0.82rem; line-height: 1.45; color: #E2E8F0;">
+        <div style="font-size: 0.82rem; line-height: 1.45; color: inherit;">
           ${log.explainability}
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -730,6 +872,14 @@ function exportAuditCsv() {
   setTimeout(() => {
     if (btn) btn.innerText = "📥 Export Compliance CSV";
   }, 1200);
+}
+
+// Export Audit Trail as PDF / Print
+function exportAuditPdf() {
+  switchView("audit");
+  setTimeout(() => {
+    window.print();
+  }, 300);
 }
 
 // Circuit Breaker & Chaos Engineering
@@ -826,13 +976,11 @@ async function checkChaosStatus() {
 }
 
 async function testOutagePurchase() {
-  // Ensure chaos is on
   const toggle = document.getElementById("chaosToggle");
   if (!toggle.checked) {
     toggle.checked = true;
     await toggleChaos(true);
   }
-  // Run purchase in terminal
   loadAndExecuteScenario("happy_path");
 }
 

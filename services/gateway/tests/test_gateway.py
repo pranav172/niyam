@@ -88,3 +88,25 @@ def test_razorpay_webhook_hmac_verification():
         headers={"X-Razorpay-Signature": "tampered_signature_hex", "Content-Type": "application/json"}
     )
     assert res_invalid.status_code == 400
+
+
+def test_token_bucket_rate_limiter():
+    """Verify TokenBucketRateLimiter consumes tokens and throttles bursts."""
+    from services.gateway.rate_limiter import TokenBucketRateLimiter
+    limiter = TokenBucketRateLimiter(capacity=3, refill_rate_per_sec=1.0)
+    agent = "test_rate_limited_agent"
+
+    # Consume 3 tokens successfully
+    assert limiter.check_and_consume(agent)[0] is True
+    assert limiter.check_and_consume(agent)[0] is True
+    assert limiter.check_and_consume(agent)[0] is True
+
+    # 4th burst request should be denied
+    allowed, retry_after = limiter.check_and_consume(agent)
+    assert allowed is False
+    assert retry_after > 0.0
+
+    # Reset agent bucket
+    limiter.reset_agent(agent)
+    assert limiter.check_and_consume(agent)[0] is True
+
