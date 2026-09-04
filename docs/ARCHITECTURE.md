@@ -127,12 +127,37 @@ The National Payments Corporation of India (NPCI) is developing the **Unified Ag
 
 ## 7. Phased Rollout Roadmap
 
-To scale NIYAM safely across enterprise merchants and autonomous buyer ecosystems, we define a 4-phase rollout methodology:
+To scale NIYAM safely across enterprise merchants and autonomous buyer ecosystems, we define a structured, 4-phase rollout methodology designed to minimize merchant operational risk while validating zero-hallucination agentic commerce:
 
-| Phase | Milestone | Scope | Risk Mitigation |
-|---|---|---|---|
-| **Phase 1: Shadow Mode (Passive Gate)** | Merchant Pilot Observation | NIYAM runs in passive observation mode behind existing merchant checkout APIs. Logs policy evaluations and detects rogue agent behavior without blocking live customer checkouts. | Zero disruption to existing checkout conversion. Baseline transaction behavior profile built. |
-| **Phase 2: Closed Sandbox (Enforced Gate)** | Verified Partner Pilots | 5 selected merchant partners and autonomous agent frameworks deploy NIYAM with enforced gating, 1-tap WhatsApp policy waivers ("Save the Sale"), and CSV compliance audits. | Strict fail-closed circuit breaker. Human principal approval required for any marginal cap delta. |
-| **Phase 3: NPCI UAP Federation** | Open Banking Integration | Direct integration with NPCI's Unified Agent Protocol (UAP) decentralized registry. Public-key infrastructure (PKI) token validation replaces static pre-shared tokens. | Cryptographic signature verification over agent delegation certificates. Native UPI Mandate auto-settlement. |
-| **Phase 4: Autonomous Clearinghouse** | Scaled Merchant Network | Multi-merchant agent clearinghouse with cross-merchant cumulative spend quotas, dynamic risk underwriting, and automated disputes management. | Multi-region active-active deployment with sub-millisecond p99 latency SLA and zero-loss WAL synchronization. |
+### Phase 1: Shadow Mode (Passive Observability — Weeks 1 to 4)
+- **Goal:** Measure agent purchase behavior without blocking real transactions.
+- **Deployment:** Integrated as an asynchronous sidecar or middleware on merchant checkout.
+- **Behavior:** Incoming agent purchases are evaluated against simulated user policies in dry-run mode. Discrepancies, false positives, and latency metrics are logged without halting the checkout pipeline.
+- **Risk Mitigation:** Zero disruption to live customer checkout conversion. Builds baseline agent behavioral profiles and catches edge cases in policy compilation.
+- **Exit Metric:** Evaluator p99 latency < 1.0ms; 0% crash rate across 50,000 synthetic requests.
+
+---
+
+### Phase 2: Closed Sandbox / Low-Value Pilot (Weeks 5 to 12)
+- **Goal:** Live financial execution in strictly bounded, low-risk categories.
+- **Scope:** Restricted to recurring or micro-transactions (daily groceries, coffee, book ordering) capped at ₹1,000/order.
+- **Security:** Enforce Razorpay test-mode / pre-authorized merchant mandates with strict agent authentication (hashed API keys + IP pinning).
+- **Behavior:** Full gating active with automated WhatsApp 1-tap waivers ("Save the Sale") and RFC-4180 CSV / printable PDF compliance audit logs.
+- **Exit Metric:** 99.9% uptime, zero unrecorded transactions, 100% idempotency deduplication rate.
+
+---
+
+### Phase 3: NPCI UAP Federation (Weeks 13 to 24)
+- **Goal:** Decentralized protocol federation with open banking standards.
+- **Scope:** Direct integration with NPCI's Unified Agent Protocol (UAP) decentralized registry. Public-key infrastructure (PKI) token validation replaces static pre-shared tokens.
+- **Security:** Cryptographic signature verification over agent delegation certificates. Native UPI Mandate auto-settlement.
+- **Exit Metric:** Sub-5ms cryptographic verification latency, interoperability across 10+ certified agent frameworks.
+
+---
+
+### Phase 4: Autonomous Clearinghouse (Weeks 25+)
+- **Goal:** Network-wide clearing and risk management for scaled merchant ecosystems.
+- **Scope:** Multi-merchant agent clearinghouse with cross-merchant cumulative spend quotas, dynamic risk underwriting, and automated disputes management.
+- **Security:** Multi-region active-active deployment with sub-millisecond p99 latency SLA and zero-loss WAL synchronization.
+- **Exit Metric:** 99.999% gateway availability, zero double-charges across multi-agent concurrent shopping spikes.
 

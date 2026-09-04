@@ -405,9 +405,9 @@ async function executePurchase() {
       if (err.save_the_sale) {
         activeWaiverData = err.save_the_sale;
         waiverSnippet = `
-          <div style="background: rgba(176, 38, 255, 0.14); border: 1px solid var(--violet-border); border-radius: 8px; padding: 0.85rem; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;">
+          <div class="save-the-sale-banner">
             <div>
-              <strong style="color: #E2B6FF; font-size: 0.82rem;">💡 Save the Sale Opportunity:</strong>
+              <strong class="save-the-sale-title">💡 Save the Sale Opportunity:</strong>
               <div style="font-size: 0.76rem; color: var(--text-secondary);">Exceeds cap by ₹${err.save_the_sale.delta_amount.toFixed(2)}. 1-Tap Waiver ready.</div>
             </div>
             <button class="btn btn-violet" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;" onclick="openWaiverModal('${err.save_the_sale.waiver_id}', '${currentScenarioPayload.items[0]?.title || "Item"}', ${err.actual_value}, ${err.save_the_sale.delta_amount})">
@@ -429,8 +429,8 @@ async function executePurchase() {
       if (err.partial_fulfillment_option && err.partial_fulfillment_option.can_fulfill_partial) {
         lastPartialOption = err.partial_fulfillment_option;
         partialSnippet = `
-          <div style="background: rgba(0, 245, 155, 0.1); border: 1px solid var(--mint-border); border-radius: 8px; padding: 0.85rem; margin-top: 0.5rem;">
-            <strong style="color: var(--mint); font-size: 0.82rem;">🛒 Atomic Cart Split & Partial Fulfillment Available:</strong>
+          <div class="partial-fulfillment-banner">
+            <strong class="partial-fulfillment-title">🛒 Atomic Cart Split & Partial Fulfillment Available:</strong>
             <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 0.2rem;">
               ${err.partial_fulfillment_option.message}
             </div>

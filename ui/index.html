@@ -190,15 +190,15 @@
                 Live Gateway Decision:
               </label>
               <div id="executionResultBox" style="display: none;"></div>
-              <div id="executionIdleBox" style="background: #0B0B10; border: 1px dashed var(--border-subtle); border-radius: 10px; padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
+              <div id="executionIdleBox" class="idle-box">
                 Click <strong>"Submit Purchase to Gateway"</strong> to trigger deterministic evaluation and view the financial decision.
               </div>
             </div>
 
             <!-- Sub-millisecond Execution Benchmark Note -->
-            <div style="background: #09090E; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1.1rem; font-size: 0.76rem; color: var(--text-secondary); line-height: 1.5;\">
+            <div class="info-callout">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
-                <strong style="color: var(--volt); font-size: 0.82rem;">🛡️ Sub-Millisecond Financial Gate</strong>
+                <strong class="info-callout-title">🛡️ Sub-Millisecond Financial Gate</strong>
                 <span class="badge badge-mint">0 LLMs in Payment Path</span>
               </div>
               Pure mathematical evaluation prevents hallucinated purchases. On approval, an authentic Razorpay MCP test link is issued. On breach, funds are strictly gated and logged to the tamper-evident audit ledger.
@@ -360,7 +360,7 @@
               ⚡ Compile & Activate New Policy Version (vN+1)
             </button>
 
-            <div style="background: #09090E; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1rem; font-size: 0.77rem; color: var(--text-secondary); line-height: 1.45;">
+            <div class="info-callout">
               <strong style="color: var(--violet);">💡 Architectural Rigor:</strong>
               The LLM parses intent and outputs a validated JSON schema strictly during configuration. When purchases execute, the LLM is completely bypassed for deterministic sub-millisecond evaluation.
             </div>
@@ -474,10 +474,10 @@
             </div>
 
             <!-- Chaos Controls Box -->
-            <div style="background: #0C0C14; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div class="chaos-control-box">
               <div>
-                <h4 style="font-size: 1rem; font-weight: 800; color: #FFF; margin-bottom: 0.3rem;">Simulate Upstream Razorpay Outage</h4>
-                <p style="font-size: 0.8rem; color: var(--text-secondary);">When flipped, the gateway immediately fails closed without attempting upstream HTTP calls, preventing ghost debits.</p>
+                <h4 class="chaos-control-title">Simulate Upstream Razorpay Outage</h4>
+                <p class="chaos-control-desc">When flipped, the gateway immediately fails closed without attempting upstream HTTP calls, preventing ghost debits.</p>
               </div>
               <div style="display: flex; gap: 0.8rem;">
                 <button class="btn btn-orange" id="btnChaosLabToggle" onclick="toggleChaosFromLab()">
@@ -490,17 +490,17 @@
             </div>
 
             <!-- 3 Stat Metrics -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-              <div style="background: #0E0E16; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1.1rem;">
-                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">Active Circuit State</span>
+            <div class="stat-cards-grid">
+              <div class="stat-card">
+                <span class="stat-card-label">Active Circuit State</span>
                 <h3 id="chaosLabState" style="color: var(--mint); margin-top: 0.4rem;">CLOSED (Healthy)</h3>
               </div>
-              <div style="background: #0E0E16; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1.1rem;">
-                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">Policy Action Enforced</span>
-                <h3 style="color: #FFF; margin-top: 0.4rem;">Fail-Closed (Zero Ghost Debits)</h3>
+              <div class="stat-card">
+                <span class="stat-card-label">Policy Action Enforced</span>
+                <h3 class="stat-card-val" style="margin-top: 0.4rem;">Fail-Closed (Zero Ghost Debits)</h3>
               </div>
-              <div style="background: #0E0E16; border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1.1rem;">
-                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">HTTP Response Code</span>
+              <div class="stat-card">
+                <span class="stat-card-label">HTTP Response Code</span>
                 <h3 style="color: var(--orange); margin-top: 0.4rem;">503 RAZORPAY_UNAVAILABLE</h3>
               </div>
             </div>
@@ -588,6 +588,40 @@
                 <button class="btn btn-secondary" style="width: fit-content; font-size: 0.78rem; padding: 0.4rem 0.85rem;" onclick="switchView('chaos')">
                   👉 Go to Circuit Breaker Lab
                 </button>
+              </div>
+            </div>
+
+            <div class="playbook-step-card">
+              <div class="step-num-badge" style="background: var(--violet); color: white;">7</div>
+              <div class="step-content-area" style="width: 100%;">
+                <div class="step-title">Phased Enterprise Rollout Strategy (Weeks 1 to 12+)</div>
+                <div class="step-explanation">Systematic merchant deployment minimizing disruption and validating zero-hallucination agentic commerce.</div>
+                <div class="rollout-phase-grid">
+                  <div class="rollout-phase-card">
+                    <div class="phase-header">
+                      <span class="badge badge-mint">Phase 1 (Weeks 1–4)</span>
+                      <strong style="font-size: 0.82rem;">Shadow Mode (Passive Observability)</strong>
+                    </div>
+                    <p style="font-size: 0.75rem; margin-top: 0.4rem; color: var(--text-secondary); line-height: 1.45;">
+                      <strong>Goal:</strong> Measure agent purchase behavior without blocking real transactions.<br>
+                      <strong>Deployment:</strong> Integrated as an asynchronous sidecar or middleware on merchant checkout.<br>
+                      <strong>Behavior:</strong> Incoming agent purchases are evaluated against simulated user policies in dry-run mode. Discrepancies, false positives, and latency metrics are logged without halting checkout.<br>
+                      <strong>Exit Metric:</strong> Evaluator p99 latency &lt; 1.0ms; 0% crash rate across 50,000 synthetic requests.
+                    </p>
+                  </div>
+                  <div class="rollout-phase-card">
+                    <div class="phase-header">
+                      <span class="badge badge-violet">Phase 2 (Weeks 5–12)</span>
+                      <strong style="font-size: 0.82rem;">Closed Sandbox / Low-Value Pilot</strong>
+                    </div>
+                    <p style="font-size: 0.75rem; margin-top: 0.4rem; color: var(--text-secondary); line-height: 1.45;">
+                      <strong>Goal:</strong> Live financial execution in strictly bounded, low-risk categories.<br>
+                      <strong>Scope:</strong> Restricted to recurring or micro-transactions (daily groceries, coffee, book ordering) capped at ₹1,000/order.<br>
+                      <strong>Security:</strong> Enforce Razorpay test-mode / pre-authorized merchant mandates with strict agent authentication (hashed API keys + IP pinning).<br>
+                      <strong>Exit Metric:</strong> 99.9% uptime, zero unrecorded transactions, 100% idempotency deduplication rate.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
