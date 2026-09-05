@@ -144,3 +144,16 @@ def test_mobile_approve_waiver_endpoint():
     assert updated.status == "APPROVED"
 
 
+def test_demo_reset_endpoint():
+    """Verify POST /demo/reset resets spend state and returns baseline limits."""
+    res = client.post("/demo/reset")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert data["user_id"] == "usr_rahul_982"
+    assert data["monthly_spend_accumulated"] == 1800.0
+    assert data["category_spend_accumulated"]["toys"] == 450.0
+    assert data["policy_version"] == "v1"
+
+
+

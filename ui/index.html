@@ -38,6 +38,10 @@
       <button class="btn btn-secondary" onclick="refreshAll()" title="Refresh Gateway State">
         🔄 Refresh
       </button>
+
+      <button class="btn btn-mint" onclick="resetDemoLimitsState()" title="Reset Demo Limits & Cumulative Spend" style="font-weight: 700;">
+        🔄 Reset Limits
+      </button>
     </div>
   </header>
 
@@ -100,7 +104,13 @@
           <h2>🤖 Autonomous Agent Shopping Terminal</h2>
           <p>Inspect active shopping cart, review remaining authorized headroom, and execute live deterministic gateway evaluation.</p>
         </div>
-        <div style="display: flex; gap: 0.6rem;">
+        <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+          <button class="btn btn-mint" style="font-size: 0.78rem; padding: 0.4rem 0.8rem; font-weight: 700;" onclick="resetDemoLimitsState()" title="Reset Demo State & Baseline Limits">
+            🔄 Reset Limits to Baseline
+          </button>
+          <button class="btn btn-violet" style="font-size: 0.78rem; padding: 0.4rem 0.8rem; font-weight: 700;" onclick="increaseToysLimit()" title="Increase Toys Limit to ₹5,000">
+            🚀 Increase Toys Limit (₹5k)
+          </button>
           <button class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.8rem;" onclick="switchView('scenarios')">
             ⚡ Load Pre-built Scenarios ↗
           </button>
@@ -121,13 +131,18 @@
           <div class="card-body">
             <!-- Cart Items Stream -->
             <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.4rem;">
                 <label style="font-size: 0.8rem; font-weight: 800; color: var(--text-secondary);">
                   Items in Agent Cart:
                 </label>
-                <button class="btn-template-pill" onclick="addCustomToyPrompt()" title="Add item">
-                  ➕ Add Item
-                </button>
+                <div style="display: flex; gap: 0.4rem; align-items: center;">
+                  <button class="btn-template-pill" onclick="addCustomToyPrompt()" title="Add item">
+                    ➕ Add Item
+                  </button>
+                  <button class="btn-template-pill" style="border-color: var(--violet); color: var(--violet); font-weight: 700;" onclick="increaseToysLimit()" title="Bump limit so you can add more toys">
+                    🚀 Bump Toys Limit (₹5k)
+                  </button>
+                </div>
               </div>
               
               <div class="cart-items-list" id="cartItemsListContainer">
@@ -433,6 +448,7 @@
               </label>
               <div class="template-buttons-row">
                 <button class="btn-template-pill" onclick="setPolicyTemplate('toys')">🧸 Kids Toys (₹1.2k)</button>
+                <button class="btn-template-pill" onclick="setPolicyTemplate('toys_high')">🚀 Kids Toys (₹5k Cap)</button>
                 <button class="btn-template-pill" onclick="setPolicyTemplate('strict')">🚫 Zero Electronics</button>
                 <button class="btn-template-pill" onclick="setPolicyTemplate('festival')">🎉 Festival Cap (₹5k)</button>
                 <button class="btn-template-pill" onclick="setPolicyTemplate('conservative')">🛡️ Strict ₹500 Cap</button>

@@ -342,6 +342,7 @@ def execute_purchase(request: PurchaseRequest, x_agent_key: Optional[str] = Head
     if not eval_result.allowed:
         if waiver_applied and approved_waiver:
             # Conversion Recovery: Human principal authorized exception
+            approved_waiver.status = "CONSUMED"
             eval_result.allowed = True
             eval_result.reason_code = ReasonCode.WAIVER_APPLIED
             eval_result.explainability = (
@@ -597,10 +598,31 @@ def get_upsell_recommendations(req: RecommendationsRequest):
     headroom = growth_engine.calculate_headroom(user_policy_list[-1], req.cart_total, spend_state)
     return {
         "authorized_headroom_remaining": headroom.effective_spendable_headroom,
+        "per_tx_limit": headroom.per_tx_limit,
+        "monthly_cap": headroom.monthly_cap,
         "recommendations_count": len(recommendations),
         "recommendations": recommendations,
         "merchant_growth_signal": "Policy-Aware Upselling maximizes basket size without causing gate rejections."
     }
+
+@app.post("/demo/reset")
+def reset_demo_state():
+    """Resets demo user accumulated spend to initial baseline."""
+    _seed_demo_state()
+    default_user = "usr_rahul_982"
+    spend = user_spend_states.get(default_user)
+    user_p_list = user_policies.get(default_user, [])
+    policy = user_p_list[-1] if user_p_list else None
+    return {
+        "status": "success",
+        "message": "Demo state reset to initial baseline. Accumulated spend reset.",
+        "user_id": default_user,
+        "monthly_spend_accumulated": spend.monthly_spend_accumulated if spend else 0.0,
+        "category_spend_accumulated": spend.category_spend_accumulated if spend else {},
+        "policy_version": policy.policy_version if policy else "v0",
+        "limits": policy.limits.model_dump() if policy else {}
+    }
+
 
 
 @app.post("/growth/waiver/request")

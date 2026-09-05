@@ -481,6 +481,8 @@ function renderCartItems() {
 function removeCartItem(index) {
   if (!currentScenarioPayload) return;
   currentScenarioPayload.items.splice(index, 1);
+  delete currentScenarioPayload.waiver_id;
+  currentScenarioPayload.idempotency_key = "idemp_" + Math.random().toString(36).substring(2, 10);
   renderCartItems();
   updatePayloadViewer();
   updateGrowthPanel();
@@ -495,6 +497,8 @@ function addCustomToyPrompt() {
   if (!currentScenarioPayload) {
     loadScenario("happy_path");
   }
+  delete currentScenarioPayload.waiver_id;
+  currentScenarioPayload.idempotency_key = "idemp_" + Math.random().toString(36).substring(2, 10);
   currentScenarioPayload.items.push({
     id: "prod_custom_" + Math.random().toString(36).substring(2, 7),
     title: name,
@@ -697,12 +701,17 @@ async function executePurchase() {
   } catch (err) {
     alert("Gateway connection error: " + err.message);
   } finally {
+    if (currentScenarioPayload) {
+      delete currentScenarioPayload.waiver_id;
+      updatePayloadViewer();
+    }
     if (btn) {
       btn.innerText = "🚀 Submit Purchase to Gateway";
       btn.disabled = false;
     }
     refreshAuditLogs();
     refreshMetrics();
+    updateGrowthPanel();
   }
 }
 
@@ -863,7 +872,8 @@ async function updateGrowthPanel() {
 
       const bar = document.getElementById("headroomProgressBar");
       if (bar) {
-        const pct = Math.min(100, Math.max(0, (cartTotal / 1200) * 100));
+        const limit = data.per_tx_limit || 1200.0;
+        const pct = Math.min(100, Math.max(0, (cartTotal / limit) * 100));
         bar.style.width = `${pct}%`;
         bar.style.background = pct > 100 ? "var(--rose)" : "linear-gradient(90deg, var(--mint), var(--volt))";
       }
@@ -930,6 +940,8 @@ function setPolicyTemplate(type) {
 
   if (type === "toys") {
     input.value = "Baccho ke toys ke liye max 1200 per order, electronics bilkul nahi, monthly 8000 se upar mat hone dena. Sirf returnable items lena.";
+  } else if (type === "toys_high") {
+    input.value = "Baccho ke toys ke liye max 5000 per order, electronics bilkul nahi, monthly 15000 se upar mat hone dena. Sirf returnable items lena.";
   } else if (type === "strict") {
     input.value = "Electronics aur gadgets strictly banned hai. Max 500 per transaction, monthly limit 3000. Books aur stationeries only.";
   } else if (type === "festival") {
@@ -1226,4 +1238,54 @@ function refreshAll() {
   refreshMetrics();
   checkChaosStatus();
   updateGrowthPanel();
+}
+
+// Reset Demo Limits & State
+async function resetDemoLimitsState() {
+  try {
+    const res = await fetch("/demo/reset", { method: "POST" });
+    if (res.ok) {
+      const data = await res.json();
+      activeWaiverData = null;
+      if (currentScenarioPayload) {
+        delete currentScenarioPayload.waiver_id;
+      }
+      loadScenario("happy_path");
+      await loadActivePolicy();
+      await updateGrowthPanel();
+      refreshMetrics();
+      refreshAuditLogs();
+      alert("✅ Demo state reset to initial baseline!\n\n• Toys spend: ₹450.00 (under ₹1,200 cap)\n• Monthly spend: ₹1,800.00 (under ₹8,000 cap)\n• Active Policy: v0\n\nYou can now execute compliant toy purchases cleanly without breach alerts.");
+    } else {
+      alert("Failed to reset demo state: HTTP " + res.status);
+    }
+  } catch (err) {
+    alert("Network error resetting demo state: " + err.message);
+  }
+}
+
+// 1-Click Increase Toys Limit to ₹5,000
+async function increaseToysLimit() {
+  const higherPrompt = "Baccho ke toys ke liye max 5000 per order, electronics bilkul nahi, monthly 15000 se upar mat hone dena. Sirf returnable items lena.";
+  try {
+    const res = await fetch("/policies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: DEFAULT_USER_ID, prompt: higherPrompt })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const input = document.getElementById("policyInput");
+      if (input) input.value = higherPrompt;
+      await loadActivePolicy();
+      await updateGrowthPanel();
+      refreshAuditLogs();
+      refreshMetrics();
+      alert(`🎉 Toys limit successfully increased!\n\n• New Per-Order Cap: ₹5,000.00\n• New Monthly Cap: ₹15,000.00\n• Policy Version: ${data.policy.policy_version}\n\nYou can now add multiple toys or high-value items without triggering waiver alerts.`);
+    } else {
+      alert("Failed to compile higher limit policy");
+    }
+  } catch (err) {
+    alert("Error updating toy limit: " + err.message);
+  }
 }
